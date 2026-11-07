@@ -168,6 +168,10 @@
     .stage-wrap::after { background: radial-gradient(ellipse 85% 92% at 50% 44%, transparent 40%, rgba(0, 0, 0, .24) 78%, #020305 130%); }
     .side { display: none; }
     body.controls-open .side { position: absolute; z-index: 6; top: 14px; right: 14px; bottom: 14px; display: block; width: min(380px, calc(100vw - 28px)); min-height: 0; border: 1px solid rgba(220, 225, 240, .15); border-radius: 14px; background: rgba(15, 17, 23, .96); box-shadow: 0 20px 70px rgba(0, 0, 0, .58); backdrop-filter: blur(16px); }
+    body.static-preview .scene-meta { display: flex; }
+    body.static-preview .drag-note { display: block; bottom: 48px; }
+    body.static-preview .credit { position: absolute; z-index: 2; right: 12px; bottom: 12px; left: 12px; display: flex; justify-content: center; padding: 0; background: transparent; color: #888d99; text-align: center; }
+    body.static-preview .credit > span:last-child { display: none; }
   </style>
 </head>
 <body>
@@ -287,7 +291,15 @@
     const debugVisionFrames = document.querySelector('#debug-vision-frames');
     const debugBackend = document.querySelector('#debug-backend');
     const debugDisplayHeartbeat = document.querySelector('#debug-display-heartbeat');
-    const debugModeRequested = new URLSearchParams(window.location.search).get('debug') === '1';
+    const queryParams = new URLSearchParams(window.location.search);
+    const staticPreviewMode = queryParams.get('preview') === '1'
+      || window.location.hostname === 'github.io'
+      || window.location.hostname.endsWith('.github.io');
+    const debugModeRequested = !staticPreviewMode && queryParams.get('debug') === '1';
+    if (staticPreviewMode) {
+      document.body.classList.add('static-preview');
+      document.title = 'Bobby · Headroom visual preview';
+    }
     debugHud.hidden = !debugModeRequested;
     const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
     document.documentElement.dataset.headroomAvatarReady = 'false';
@@ -367,9 +379,11 @@
     let requestController = null;
     let lastSpeechTiming = '';
     let modelReady = false;
-    let backendChecked = false;
+    let backendChecked = staticPreviewMode;
     let backendReady = false;
-    let backendMessage = 'Connecting to the local speech service…';
+    let backendMessage = staticPreviewMode
+      ? 'Static visual preview · speech and visitor services are not hosted here.'
+      : 'Connecting to the local speech service…';
     let laptopAudioDescription = 'laptop audio output';
     let conversationEnabled = false;
     let backendVisitorActive = false;
@@ -396,6 +410,16 @@
     }
 
     function updateReadiness() {
+      if (staticPreviewMode) {
+        speakButton.disabled = true;
+        conversationToggle.disabled = true;
+        conversationGreet.disabled = true;
+        if (modelReady) {
+          topStatus.textContent = 'visual preview';
+          setStatus('Static visual preview · speech and visitor mode require the local server.');
+        }
+        return;
+      }
       debugBackend.textContent = !backendChecked ? 'Checking…' : backendReady ? `OpenAI + Rhubarb + ${laptopAudioDescription} ready` : backendMessage;
       if (!debugModeRequested && modelReady && backendChecked && backendReady && !autoStartAttempted) {
         autoStartAttempted = true;
@@ -1779,8 +1803,15 @@
         else void startSpeech();
       }
     });
-    void checkBackend();
-    if (debugModeRequested) void pollConversation();
+    if (staticPreviewMode) {
+      voiceCount.textContent = 'visual preview only';
+      conversationStatus.textContent = 'Visitor mode is unavailable on this static page.';
+      conversationDevices.textContent = 'No camera, microphone, or speech backend is connected.';
+      updateReadiness();
+    } else {
+      void checkBackend();
+      if (debugModeRequested) void pollConversation();
+    }
 
     function audioDrivenJaw(piece, localTime) {
       const envelope = piece.samples;
