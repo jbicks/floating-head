@@ -752,7 +752,13 @@ class Handler(SimpleHTTPRequestHandler):
 
     @staticmethod
     def _is_public_static_path(path: str) -> bool:
-        if path in {"/index.html", "/ATTRIBUTION.md", "/LICENSE"}:
+        if path in {
+            "/index.html",
+            "/ATTRIBUTION.md",
+            "/LICENSE",
+            "/peppers-ghost-demo.html",
+            "/media/bobby-peppers-ghost-display.mp4",
+        }:
             return True
         if not path.startswith("/assets/") or not path.lower().endswith(".glb"):
             return False

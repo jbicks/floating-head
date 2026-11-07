@@ -4,7 +4,7 @@ A browser-based Pepper's Ghost avatar featuring Bobby, a cheerful, gently spooky
 
 ## Live visual preview
 
-[See Bobby on GitHub Pages](https://jbicks.github.io/floating-head/). Drag to orbit and scroll to zoom. This static preview does not use the Python backend, camera, microphone, speech, lip-sync service, or visitor mode. It automatically activates on `*.github.io`; add `?preview=1` to try it locally.
+[See Bobby's interactive 3D preview](https://jbicks.github.io/floating-head/) or [watch her in the physical Pepper's Ghost setup](https://jbicks.github.io/floating-head/peppers-ghost-demo.html). The 3D page supports orbit and zoom; its static mode does not use the Python backend, camera, microphone, speech, lip-sync service, or visitor mode. Static mode activates on `*.github.io`; add `?preview=1` to try it locally.
 
 ## Run locally
 
@@ -46,5 +46,5 @@ Headroom is compatible with YOLO-style adapters, but does not include or install
 ## Privacy and licensing
 
 - Raw microphone audio is sent to OpenAI for transcription but is not saved. Recognized transcripts and person-crop images are saved locally by default under `logs/`; disable them with `HEADROOM_SAVE_TRANSCRIPTS=0` and `HEADROOM_SAVE_VISION_FRAMES=0`. Crops are sent to OpenAI only with conversation turns. No face recognition or persistent identity tracking is used. Follow event consent requirements when vision is active.
-- Logs, local environments, credentials, and generated media are excluded from Git. The web server serves only the app page, attribution/license files, and GLB assets.
+- Private logs, local environments, credentials, and generated media are excluded from Git. The short location-metadata-stripped display clip under `media/` is intentionally public. The web server serves only allowlisted app, attribution/license, GLB, and demo-video files.
 - The repository’s [MIT license](LICENSE) covers Headroom’s original code. Bundled assets and runtime dependencies have separate terms; see [ATTRIBUTION.md](ATTRIBUTION.md).

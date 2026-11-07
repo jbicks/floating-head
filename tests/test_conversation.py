@@ -128,6 +128,14 @@ class StaticPageCacheTests(unittest.TestCase):
                 self.assertEqual(response.status, 200)
                 self.assertEqual(response.read(4), b"glTF")
                 response.read()
+            with urllib.request.urlopen(f"{base}/peppers-ghost-demo.html", timeout=5) as response:
+                demo_page = response.read().decode("utf-8")
+                self.assertIn("Bobby in a Pepper's Ghost display", demo_page)
+                self.assertIn("media/bobby-peppers-ghost-display.mp4", demo_page)
+            video_head = urllib.request.Request(f"{base}/media/bobby-peppers-ghost-display.mp4", method="HEAD")
+            with urllib.request.urlopen(video_head, timeout=5) as response:
+                self.assertEqual(response.status, 200)
+                self.assertTrue(response.headers.get("Content-Type", "").startswith("video/mp4"))
 
             private_paths = (
                 "/.git/config", "/.env", "/server.py", "/README.md",

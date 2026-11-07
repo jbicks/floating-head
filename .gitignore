@@ -34,6 +34,7 @@ vision_frames/
 *.pcm
 *.mp3
 *.mp4
+!media/bobby-peppers-ghost-display.mp4
 *.mov
 *.jpg
 *.jpeg
