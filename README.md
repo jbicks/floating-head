@@ -35,8 +35,16 @@ No detector or model is bundled or installed by default. Without a plugin, motio
 
 Headroom is compatible with YOLO-style adapters, but does not include or install one. Review the adapter, detector, and model licenses independently; Ultralytics software is AGPL-3.0. See [ATTRIBUTION.md](ATTRIBUTION.md).
 
+## More details
+
+- [Project intent and design boundaries](docs/INTENT.md)
+- [Visitor-mode setup, behavior, and diagnostics](docs/VISITOR_MODE.md)
+- [Privacy, retention, and network safety](docs/PRIVACY.md)
+- [External person-detector plugin contract](docs/PERSON_DETECTOR_PLUGIN.md)
+- [Attribution and third-party licenses](ATTRIBUTION.md)
+
 ## Privacy and licensing
 
 - Raw microphone audio is sent to OpenAI for transcription but is not saved. Recognized transcripts and person-crop images are saved locally by default under `logs/`; disable them with `HEADROOM_SAVE_TRANSCRIPTS=0` and `HEADROOM_SAVE_VISION_FRAMES=0`. Crops are sent to OpenAI only with conversation turns. No face recognition or persistent identity tracking is used. Follow event consent requirements when vision is active.
-- Logs, local environments, credentials, and generated media are excluded from Git. The web server serves only the intended app page and GLB assets.
+- Logs, local environments, credentials, and generated media are excluded from Git. The web server serves only the app page, attribution/license files, and GLB assets.
 - The repository’s [MIT license](LICENSE) covers Headroom’s original code. Bundled assets and runtime dependencies have separate terms; see [ATTRIBUTION.md](ATTRIBUTION.md).
