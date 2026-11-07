@@ -26,9 +26,9 @@ Install the open-source Rhubarb Lip Sync command-line tool once (the official Li
 
 Open **http://localhost:8766** in a browser on Windows or Linux. The plain URL is the clean kiosk display: once the avatar and services load, it automatically starts visitor mode, with no on-screen controls. Speech plays through the laptop's WSL PulseAudio output (`paplay`, normally WSLg's `RDPSink` to the current Windows audio output); the browser receives compact mouth-animation data and Rhubarb cues, but no speech audio. No Safari audio-unlock tap is needed. Add `?debug=1` to show touch controls and diagnostics; debug mode starts visitor mode off. Nova at Natural speed (0.94×) is the default, with relaxed conversational delivery. Stop the server with `Ctrl+C`; it shuts down capture and drains active speech work before exiting. Running `./run.sh` again gracefully replaces an existing Headroom server on that port, while refusing to terminate unrelated processes. To use a different port, run `PORT=9000 ./run.sh`. The default Rhubarb recognizer is `phonetic`, which keeps startup faster but can be less precise; use `RHUBARB_RECOGNIZER=pocketSphinx ./run.sh` to compare against PocketSphinx.
 
-## GitHub Pages visual preview
+## Live visual preview
 
-The page automatically enters static visual-preview mode on `*.github.io`, or use `?preview=1` to preview it locally. This mode skips all `/api/` requests and displays the 3D avatar with orbit/zoom and credits; it does not provide the Python-backed speech, lip-sync, camera, microphone, or visitor features. To publish it, open the repository's **Settings → Pages**, select **Deploy from a branch**, choose `main` and `/(root)`, and save. GitHub Pages will publish the preview at `https://jbicks.github.io/floating-head/`.
+See [Bobby's interactive 3D preview on GitHub Pages](https://jbicks.github.io/floating-head/). Drag to orbit around the floating head and scroll to zoom. The page automatically enters static preview mode on `*.github.io`; use `?preview=1` to try that mode locally. It skips all `/api/` requests and does not provide the Python-backed speech, lip-sync service, camera, microphone, or visitor features.
 
 ## Optional external person detector
 
