@@ -4,7 +4,7 @@ A browser-based Pepper's Ghost avatar featuring Bobby, a cheerful, gently spooky
 
 ## Live visual preview
 
-[See Bobby's interactive 3D preview](https://jbicks.github.io/floating-head/) or [watch her in the physical Pepper's Ghost setup](https://jbicks.github.io/floating-head/peppers-ghost-demo.html). The 3D page supports orbit and zoom; its static mode does not use the Python backend, camera, microphone, speech, lip-sync service, or visitor mode. Static mode activates on `*.github.io`; add `?preview=1` to try it locally.
+[See Bobby's interactive 3D preview](https://jbicks.github.io/floating-head/) or [watch a live conversation in the physical Pepper's Ghost setup](https://jbicks.github.io/floating-head/peppers-ghost-demo.html). The 3D page supports orbit and zoom; its static mode does not use the Python backend, camera, microphone, speech, lip-sync service, or visitor mode. Static mode activates on `*.github.io`; add `?preview=1` to try it locally.
 
 ## Run locally
 
