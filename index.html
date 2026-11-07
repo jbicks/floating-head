@@ -1,0 +1,1890 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111319">
+  <title>Bobby — Headroom Pepper's Ghost</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f2f1eb;
+      --muted: #989ba7;
+      --dim: #6f7482;
+      --line: rgba(220, 225, 240, .10);
+      --surface: #17191f;
+      --surface-hi: #1d2028;
+      --accent: #d0f27b;
+      --accent-dark: #273512;
+      --blue: #9cb6ff;
+      font-family: "DM Sans", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; min-width: 320px; height: 100%; margin: 0; }
+    body { overflow: hidden; color: var(--ink); background: #101116; }
+    button, textarea, select { font: inherit; }
+    button { color: inherit; }
+    .app { height: 100%; display: grid; grid-template-rows: 74px minmax(0, 1fr); }
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 32px; border-bottom: 1px solid var(--line); background: rgba(17, 19, 25, .92); z-index: 2; }
+    .brand { display: flex; align-items: center; gap: 13px; }
+    .brand-mark { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 11px; color: #10140b; background: var(--accent); }
+    .brand-mark svg { width: 20px; height: 20px; }
+    .brand-title { font: 800 17px/1 Manrope, sans-serif; letter-spacing: -.7px; }
+    .brand-sub { margin-top: 4px; color: var(--muted); font: 11px/1 "DM Mono", monospace; letter-spacing: .06em; text-transform: uppercase; }
+    .top-right { display: flex; align-items: center; gap: 10px; }
+    .tag { border: 1px solid var(--line); border-radius: 999px; padding: 7px 10px; color: #c6c9d2; font: 10px/1 "DM Mono", monospace; letter-spacing: .06em; text-transform: uppercase; }
+    .tag .dot { display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; vertical-align: 1px; background: var(--accent); box-shadow: 0 0 10px #d0f27b80; }
+    .workspace { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 380px; }
+    .stage-wrap { position: relative; min-width: 0; min-height: 0; overflow: hidden; border-right: 1px solid var(--line); background: radial-gradient(ellipse 45% 50% at 50% 41%, rgba(107, 124, 159, .24), transparent 76%), radial-gradient(ellipse 90% 80% at 45% 110%, rgba(87, 72, 72, .23), transparent 70%), linear-gradient(145deg, #23252e 0%, #171921 44%, #15171e 100%); }
+    .stage-wrap::before { content: ""; position: absolute; z-index: 0; width: min(54vw, 650px); aspect-ratio: 1; left: 50%; top: 43%; transform: translate(-50%, -50%); border: 1px solid rgba(223, 229, 255, .045); border-radius: 50%; box-shadow: 0 0 0 42px rgba(223, 229, 255, .018), 0 0 0 96px rgba(223, 229, 255, .012); pointer-events: none; }
+    .stage-wrap::after { content: ""; position: absolute; z-index: 0; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(15,16,22,.10), transparent 18%, transparent 80%, rgba(15,16,22,.10)), linear-gradient(0deg, rgba(16,17,22,.52), transparent 34%); }
+    #stage { position: absolute; inset: 0; z-index: 1; }
+    #stage canvas { display: block; width: 100%; height: 100%; outline: none; }
+    .scene-meta { position: absolute; z-index: 2; left: 28px; top: 24px; display: flex; align-items: center; gap: 10px; pointer-events: none; }
+    .scene-kicker { color: #c6c9d1; font: 10px/1 "DM Mono", monospace; letter-spacing: .11em; text-transform: uppercase; }
+    .scene-divider { height: 13px; border-left: 1px solid rgba(255,255,255,.23); }
+    .scene-model { color: var(--muted); font-size: 12px; }
+    .drag-note { position: absolute; z-index: 2; left: 50%; bottom: 27px; transform: translateX(-50%); padding: 8px 12px; border: 1px solid rgba(255,255,255,.10); border-radius: 99px; background: rgba(17,19,25,.40); color: #bdc0c9; font-size: 11px; white-space: nowrap; pointer-events: none; backdrop-filter: blur(8px); }
+    .drag-note span { color: var(--accent); margin-right: 6px; }
+    .loading { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: rgba(17,19,25,.74); backdrop-filter: blur(8px); transition: opacity .3s; }
+    .loading.hidden { opacity: 0; pointer-events: none; }
+    .loader-card { width: min(300px, calc(100% - 40px)); text-align: center; }
+    .loader-orbit { width: 38px; height: 38px; margin: 0 auto 18px; border: 1px solid rgba(255,255,255,.16); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader-title { font: 600 14px Manrope, sans-serif; }
+    .loader-detail { min-height: 16px; margin-top: 7px; color: var(--muted); font: 11px "DM Mono", monospace; }
+    .debug-hud { position: absolute; z-index: 9; top: 12px; left: 12px; width: min(340px, calc(100vw - 24px)); padding: 13px; border: 1px solid rgba(170, 218, 202, .28); border-radius: 12px; color: #e7f1ed; background: rgba(8, 13, 15, .88); box-shadow: 0 12px 36px rgba(0,0,0,.4); backdrop-filter: blur(12px); font: 10px/1.45 "DM Mono", monospace; }
+    .debug-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: #b7d2c8; font-size: 9px; letter-spacing: .08em; }
+    .debug-mode { padding: 3px 7px; border: 1px solid rgba(220,225,240,.15); border-radius: 99px; color: #bdc3ca; text-transform: uppercase; }
+    .debug-mode[data-active="true"] { color: #d0f27b; border-color: rgba(208,242,123,.35); }
+    .debug-mode[data-mode="error"] { color: #ff958c; border-color: rgba(255,130,123,.4); }
+    .debug-message { margin: 9px 0; color: #f2f1eb; font: 600 11px/1.4 "DM Sans", sans-serif; }
+    .debug-line { display: grid; grid-template-columns: 92px minmax(0,1fr); gap: 8px; padding: 4px 0; border-top: 1px solid rgba(220,225,240,.08); }
+    .debug-line span:first-child { color: #858e98; }
+    .debug-line span:last-child { overflow-wrap: anywhere; color: #cbd2d1; }
+    .debug-note { margin: 8px 0 0; color: #75817f; font-size: 9px; }
+    .debug-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 10px; }
+    .debug-controls button { min-height: 34px; border: 1px solid rgba(220,225,240,.14); border-radius: 8px; color: #e7f1ed; background: rgba(255,255,255,.07); font: 600 10px "DM Sans", sans-serif; cursor: pointer; }
+    .debug-controls button:first-child { border-color: rgba(208,242,123,.3); color: #d0f27b; }
+    .debug-controls button:disabled { opacity: .45; cursor: wait; }
+    .conversation-action { min-height: 42px; padding: 0 16px; border: 0; border-radius: 10px; color: #161a10; background: var(--accent); font: 700 12px Manrope, sans-serif; cursor: pointer; }
+    .conversation-action:disabled { opacity: .5; cursor: wait; }
+    .conversation-state { min-height: 18px; margin-top: 12px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+    .conversation-device { margin: 8px 0 0; color: var(--dim); font: 9px/1.5 "DM Mono", monospace; overflow-wrap: anywhere; }
+    .conversation-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 13px; }
+    .conversation-action { width: 100%; min-height: 38px; font-size: 11px; }
+    .conversation-action.secondary { border: 1px solid var(--line); color: #d9dae0; background: #20232c; }
+    [hidden] { display: none !important; }
+    .side {  min-height: 0; overflow-y: auto; padding: 30px 26px 24px; background: #14161c; }
+    .eyebrow { color: var(--accent); font: 10px/1.3 "DM Mono", monospace; letter-spacing: .13em; text-transform: uppercase; }
+    h1 { margin: 9px 0 8px; font: 700 25px/1.15 Manrope, sans-serif; letter-spacing: -.9px; }
+    .intro { max-width: 300px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .section { margin-top: 25px; }
+    .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 9px; }
+    label, .label { color: #d9dae0; font: 600 11px "DM Sans", sans-serif; }
+    .field-note { color: var(--dim); font: 10px "DM Mono", monospace; }
+    textarea, select { width: 100%; border: 1px solid rgba(220,225,240,.12); border-radius: 10px; outline: none; color: var(--ink); background: #1c1f27; transition: border-color .15s, box-shadow .15s; }
+    textarea:focus, select:focus { border-color: rgba(208,242,123,.6); box-shadow: 0 0 0 3px rgba(208,242,123,.08); }
+    textarea { height: 132px; min-height: 96px; padding: 13px 14px; resize: vertical; font-size: 13px; line-height: 1.55; }
+    select { height: 40px; padding: 0 11px; font-size: 12px; }
+    .voice-row { display: grid; grid-template-columns: minmax(0,1fr) 80px; gap: 8px; }
+    input[type="range"] { width: 100%; height: 4px; margin: 15px 0; accent-color: var(--accent); }
+    .rate-value { color: var(--muted); font: 10px "DM Mono", monospace; }
+    .actions { display: grid; grid-template-columns: minmax(0,1fr) 44px; gap: 9px; margin-top: 14px; }
+    .speak-btn, .stop-btn, .sample-btn, .upload-btn { border: 0; cursor: pointer; transition: transform .14s, background .14s, opacity .14s; }
+    .speak-btn:hover, .stop-btn:hover, .sample-btn:hover, .upload-btn:hover { transform: translateY(-1px); }
+    .speak-btn { min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 10px; color: #161a10; background: var(--accent); font: 700 13px Manrope, sans-serif; }
+    .speak-btn:hover { background: #ddffa0; }
+    .speak-btn:disabled { opacity: .5; cursor: wait; transform: none; }
+    .speak-btn svg { width: 17px; height: 17px; }
+    .stop-btn { display: grid; place-items: center; border: 1px solid var(--line); border-radius: 10px; background: #20232c; color: #e6e7ec; }
+    .stop-btn:hover { background: #2a2d37; }
+    .stop-btn svg { width: 14px; height: 14px; }
+    .status { display: flex; align-items: flex-start; gap: 8px; min-height: 34px; margin-top: 11px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+    .status-dot { flex: 0 0 auto; width: 6px; height: 6px; margin-top: 4px; border-radius: 50%; background: var(--dim); }
+    .status.active .status-dot { background: var(--accent); box-shadow: 0 0 10px #d0f27b80; animation: pulse 1.2s ease-in-out infinite; }
+    .status.error .status-dot { background: #ff827b; }
+    @keyframes pulse { 50% { opacity: .45; } }
+    .separator { border: 0; border-top: 1px solid var(--line); margin: 24px 0 0; }
+    .model-card { display: flex; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 11px; background: #1a1c23; }
+    .model-icon { flex: 0 0 auto; display: grid; width: 37px; height: 37px; place-items: center; border-radius: 9px; color: var(--blue); background: #2b3041; }
+    .model-icon svg { width: 19px; height: 19px; }
+    .model-name { color: var(--ink); font: 600 12px Manrope, sans-serif; }
+    .model-license { margin-top: 4px; color: var(--muted); font: 10px "DM Mono", monospace; }
+    .model-copy { margin-top: 8px; color: #aaadb7; font-size: 11px; line-height: 1.5; }
+    .model-actions { display: flex; gap: 8px; }
+    .upload-btn { flex: 1; width: 100%; margin-top: 9px; padding: 10px; border: 1px dashed rgba(220,225,240,.18); border-radius: 9px; color: #c5c8d1; background: transparent; font-size: 11px; }
+    .upload-btn:hover { border-color: rgba(208,242,123,.5); background: rgba(208,242,123,.04); }
+    .reset-btn { margin-top: 9px; padding: 10px; border: 1px solid var(--line); border-radius: 9px; color: #c5c8d1; background: #20232c; font-size: 11px; cursor: pointer; }
+    .reset-btn:hover { background: #292c36; }
+    .reset-btn[hidden] { display: none; }
+    .model-tip { margin: 8px 2px 0; color: var(--dim); font-size: 10px; line-height: 1.45; }
+    .footnote { margin: 18px 1px 0; color: var(--dim); font-size: 10px; line-height: 1.55; }
+    .footnote strong { color: #b6b9c3; font-weight: 500; }
+    .credit { display: flex; justify-content: space-between; gap: 12px; padding: 0 28px 18px; color: #777b86; background: #14161c; font: 9px "DM Mono", monospace; letter-spacing: .02em; }
+    a { color: #aebcf0; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    #model-file { display: none; }
+    @media (max-width: 900px) {
+      .workspace { grid-template-columns: minmax(0,1fr) 340px; }
+      .side { padding: 25px 20px 20px; }
+      .topbar { padding: 0 22px; }
+    }
+    @media (max-width: 700px) {
+      body { overflow: auto; }
+      .app { height: auto; min-height: 100%; grid-template-rows: 62px auto; }
+      .topbar { position: sticky; top: 0; padding: 0 16px; }
+      .tag:last-child { display: none; }
+      .workspace { display: flex; flex-direction: column; }
+      .stage-wrap { height: min(64vh, 560px); min-height: 380px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .stage-wrap::before { width: min(80vw, 440px); }
+      .scene-meta { left: 16px; top: 17px; }
+      .side { overflow: visible; padding: 26px 20px 18px; }
+      .side h1 { font-size: 24px; }
+      .credit { padding: 0 20px 18px; }
+      .drag-note { bottom: 17px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; } }
+
+    /* Clean, head-only kiosk view. F2 reveals the editing controls when needed. */
+    html, body { min-width: 320px; height: 100%; background: #020305; }
+    .app { position: relative; display: block; width: 100%; height: 100vh; height: 100dvh; min-height: 320px; }
+    .topbar, .credit, .scene-meta, .drag-note { display: none; }
+    .workspace { display: block; width: 100%; height: 100%; }
+    .stage-wrap { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: radial-gradient(ellipse 42% 45% at 50% 45%, rgba(0, 218, 186, .14), transparent 76%), #020305; }
+    .stage-wrap::before { width: min(94vmin, 1080px); top: 48%; border: 0; box-shadow: none; background: radial-gradient(circle, rgba(29, 235, 193, .11), rgba(84, 70, 205, .05) 47%, transparent 72%); }
+    .stage-wrap::after { background: radial-gradient(ellipse 85% 92% at 50% 44%, transparent 40%, rgba(0, 0, 0, .24) 78%, #020305 130%); }
+    .side { display: none; }
+    body.controls-open .side { position: absolute; z-index: 6; top: 14px; right: 14px; bottom: 14px; display: block; width: min(380px, calc(100vw - 28px)); min-height: 0; border: 1px solid rgba(220, 225, 240, .15); border-radius: 14px; background: rgba(15, 17, 23, .96); box-shadow: 0 20px 70px rgba(0, 0, 0, .58); backdrop-filter: blur(16px); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2c-4.7 0-8 3.7-8 8.6 0 4.7 3.2 8.7 8 8.7s8-4 8-8.7c0-4.9-3.3-8.6-8-8.6Z" stroke="currentColor" stroke-width="1.7"/><path d="M8.3 10.3h.1m7.2 0h.1M9.2 15c1.6 1.2 4 1.2 5.6 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <div><div class="brand-title">headroom</div><div class="brand-sub">3D face lab · browser demo</div></div>
+      </div>
+      <div class="top-right">
+        <div class="tag"><span class="dot"></span><span id="top-status">loading model</span></div>
+        <div class="tag">OpenAI TTS · per line</div>
+      </div>
+    </header>
+    <main class="workspace">
+      <section class="stage-wrap" aria-label="3D avatar preview">
+        <div class="scene-meta"><span class="scene-kicker">Live preview</span><span class="scene-divider"></span><span class="scene-model" id="scene-model">MPFB · floating head</span></div>
+        <div id="stage"></div>
+        <div class="drag-note"><span>↔</span> drag to look around · scroll to zoom</div>
+        <div class="loading" id="loading">
+          <div class="loader-card"><div class="loader-orbit"></div><div class="loader-title">Waking up the model</div><div class="loader-detail" id="loading-detail">Preparing the face…</div></div>
+        </div>
+        <div class="debug-hud" id="debug-hud" hidden aria-live="polite">
+          <div class="debug-heading"><span>BOBBY · LIVE TEST MONITOR</span><span class="debug-mode" id="debug-mode">STOPPED</span></div>
+          <div class="debug-message" id="debug-message">Connecting to the local service…</div>
+          <div class="debug-line"><span>Camera</span><span id="debug-camera">Checking…</span></div>
+          <div class="debug-line"><span>Microphone</span><span id="debug-microphone">Checking…</span></div>
+          <div class="debug-line"><span>Optional person detector</span><span id="debug-person-detection">Starting…</span></div>
+          <div class="debug-line"><span>Visitor wakeups</span><span id="debug-motion">0 automatic · 0 manual</span></div>
+          <div class="debug-line"><span>Speech recognized</span><span id="debug-heard">0 turns</span></div>
+          <div class="debug-line"><span>Vision frames</span><span id="debug-vision-frames">0 saved · no snapshot yet</span></div>
+          <div class="debug-line"><span>Speech + lip-sync</span><span id="debug-backend">Checking…</span></div>
+          <div class="debug-line"><span>Display poll</span><span id="debug-display-heartbeat">Not seen</span></div>
+          <p class="debug-note">Visual-context JPEGs and recognized visitor transcripts are saved privately under logs/; raw microphone audio is not saved or served.</p>
+          <div class="debug-controls"><button id="debug-toggle" type="button">Start visitor mode</button><button id="debug-greet" type="button" disabled>Greet now</button></div>
+        </div>
+      </section>
+      <aside class="side">
+        <div class="eyebrow">A small voice test</div>
+        <h1>Give Bobby<br>something to say.</h1>
+        <p class="intro">Try a line and an OpenAI voice. The laptop plays the generated speech and analyzes that same audio locally; the browser displays Bobby and animates her mouth in sync.</p>
+
+        <div class="section">
+          <div class="section-head"><label for="speech-text">Your line</label><span class="field-note">ENTER TO SPEAK</span></div>
+          <textarea id="speech-text" maxlength="600" spellcheck="true">Hello there. I'm Bobby, and this is my first conversation.</textarea>
+          <div class="actions">
+            <button class="speak-btn" id="speak" type="button"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Zm4 4a4 4 0 0 1 0 6m3-9a8 8 0 0 1 0 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Speak</span></button>
+            <button class="stop-btn" id="stop" type="button" aria-label="Stop speaking" title="Stop"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></button>
+          </div>
+          <div class="status" id="status"><span class="status-dot"></span><span id="status-text">Loading avatar…</span></div>
+          <div class="conversation-controls">
+            <button class="conversation-action" id="conversation-toggle" type="button">Start visitor mode</button>
+            <button class="conversation-action secondary" id="conversation-greet" type="button" disabled>Greet now</button>
+          </div>
+          <div class="conversation-state" id="conversation-status" aria-live="polite">Visitor mode is off.</div>
+          <p class="conversation-device" id="conversation-devices">Laptop camera and microphone are managed by the WSL backend.</p>
+        </div>
+
+        <div class="section">
+          <div class="section-head"><label for="voice">OpenAI voice</label><span class="field-note" id="voice-count">connecting…</span></div>
+          <div class="voice-row"><select id="voice" aria-label="Choose an OpenAI speech voice"><option value="nova">nova</option></select><div><select id="rate" aria-label="Speech speed"><option value="0.82">Slow</option><option value="0.94" selected>Natural</option><option value="1.08">Brisk</option></select></div></div>
+          <p class="model-tip">Speech streams in short packets while nearby words stay together for more natural phrasing; Rhubarb cues take over precise mouth movement as soon as analysis is ready.</p>
+        </div>
+
+        <hr class="separator">
+        <div class="section" style="margin-top:18px">
+          <div class="section-head"><span class="label">The face</span><span class="field-note" id="blendshape-count">66 facial targets</span></div>
+          <div class="model-card">
+            <div class="model-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5c-4.6 0-7.7 3.7-7.7 8.4 0 4.6 3.1 8.6 7.7 8.6s7.7-4 7.7-8.6c0-4.7-3.1-8.4-7.7-8.4Z" stroke="currentColor" stroke-width="1.5"/><path d="M8.3 10.4h.1m7.2 0h.1M9.2 15c1.6 1.2 4 1.2 5.6 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6.4 6.8 4.6m9.2 1.8 1.2-1.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+            <div><div class="model-name" id="model-name">MPFB · floating head</div><div class="model-license" id="model-license">CC0 · public domain</div><div class="model-copy">A mint-green floating head with a separate Otohiko wig, luminous eyes, and preserved facial shape keys.</div></div>
+          </div>
+          <div class="model-actions">
+            <button class="upload-btn" id="upload-model" type="button">Open another compatible .glb model…</button>
+            <button class="reset-btn" id="reset-model" type="button" hidden>Reset</button>
+          </div>
+          <input id="model-file" type="file" accept=".glb,model/gltf-binary">
+          <p class="model-tip">For best results, choose a GLB that has facial morph targets (blendshapes) and faces forward. Unsupported models will still render, but may not lip-sync.</p>
+        </div>
+        <p class="footnote"><strong>About speech:</strong> OpenAI's streamed PCM is played through the laptop's PulseAudio output; the iPad receives compact jaw-envelope values and Rhubarb mouth cues to animate the face, never the speech audio. The same PCM is analyzed for lip-sync on the laptop. Visitor microphone audio is not saved; recognized visitor transcripts are retained privately in logs/visitor_transcripts.jsonl. Generated speech audio and temporary Rhubarb files are discarded after analysis; the API key stays on this local server and is never sent to the browser.</p>
+      </aside>
+    </main>
+    <footer class="credit"><span>Model: MPFB CC0 · custom wig by Da cat · <a href="ATTRIBUTION.md" target="_blank" rel="noreferrer">credits &amp; license</a></span><span>Three.js · floating-head display · Rhubarb lip-sync</span></footer>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+
+    const stage = document.querySelector('#stage');
+    const loading = document.querySelector('#loading');
+    const loadingDetail = document.querySelector('#loading-detail');
+    const topStatus = document.querySelector('#top-status');
+    const status = document.querySelector('#status');
+    const statusText = document.querySelector('#status-text');
+    const voiceSelect = document.querySelector('#voice');
+    const voiceCount = document.querySelector('#voice-count');
+    const speechText = document.querySelector('#speech-text');
+    const speakButton = document.querySelector('#speak');
+    const rateSelect = document.querySelector('#rate');
+    const modelFile = document.querySelector('#model-file');
+    const conversationToggle = document.querySelector('#conversation-toggle');
+    const conversationGreet = document.querySelector('#conversation-greet');
+    const conversationStatus = document.querySelector('#conversation-status');
+    const conversationDevices = document.querySelector('#conversation-devices');
+    const debugHud = document.querySelector('#debug-hud');
+    const debugMode = document.querySelector('#debug-mode');
+    const debugMessage = document.querySelector('#debug-message');
+    const debugCamera = document.querySelector('#debug-camera');
+    const debugMicrophone = document.querySelector('#debug-microphone');
+    const debugPersonDetection = document.querySelector('#debug-person-detection');
+    const debugMotion = document.querySelector('#debug-motion');
+    const debugHeard = document.querySelector('#debug-heard');
+    const debugVisionFrames = document.querySelector('#debug-vision-frames');
+    const debugBackend = document.querySelector('#debug-backend');
+    const debugDisplayHeartbeat = document.querySelector('#debug-display-heartbeat');
+    const debugModeRequested = new URLSearchParams(window.location.search).get('debug') === '1';
+    debugHud.hidden = !debugModeRequested;
+    const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+    document.documentElement.dataset.headroomAvatarReady = 'false';
+    document.documentElement.dataset.headroomHairReady = 'pending';
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(26, 1, 0.05, 80);
+    camera.position.set(0, 0, 1.42);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    renderer.localClippingEnabled = true;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.16;
+    renderer.setClearColor(0x000000, 0);
+    renderer.domElement.setAttribute('aria-label', 'Interactive 3D talking avatar');
+    renderer.domElement.tabIndex = 0;
+    stage.appendChild(renderer.domElement);
+
+    const hemi = new THREE.HemisphereLight(0xd4fff0, 0x211633, 1.9);
+    scene.add(hemi);
+    const key = new THREE.DirectionalLight(0xcaffea, 2.8);
+    key.position.set(-1.5, 2.6, 3.2);
+    scene.add(key);
+    const fill = new THREE.DirectionalLight(0x8066ff, 1.65);
+    fill.position.set(2.8, 1.0, 2.0);
+    scene.add(fill);
+    const rim = new THREE.DirectionalLight(0xb8fff8, 2.7);
+    rim.position.set(-1.0, 2.6, -2.5);
+    scene.add(rim);
+    const hairWhiteRim = new THREE.DirectionalLight(0xf0fffc, 1.05);
+    hairWhiteRim.position.set(1.8, 2.2, -1.0);
+    scene.add(hairWhiteRim);
+    const greenRim = new THREE.DirectionalLight(0x69ff8f, 1.15);
+    greenRim.position.set(-2.6, 0.5, -1.5);
+    scene.add(greenRim);
+
+    const pivot = new THREE.Group();
+    scene.add(pivot);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 0, 0);
+    controls.enablePan = false;
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.055;
+    controls.minDistance = 0.95;
+    controls.maxDistance = 2.4;
+    controls.minPolarAngle = Math.PI * 0.34;
+    controls.maxPolarAngle = Math.PI * 0.66;
+    controls.rotateSpeed = 0.42;
+    controls.zoomSpeed = 0.7;
+    controls.update();
+
+    let avatar = null;
+    let headBone = null;
+    let headFitOffsetWorld = new THREE.Vector3();
+    let morphMeshes = [];
+    let morphKeys = new Set();
+    let originalHeadRotation = null;
+    let nextBlinkAt = performance.now() + 1800;
+    let blinkStart = -1;
+    let currentFileName = 'MPFB · floating head';
+    let zombieLook = false;
+    const generatedZombieTextures = [];
+    let zombieAtmosphere = null;
+    let zombieAtmosphereMotion = [];
+    let isSpeaking = false;
+    let isRequestingSpeech = false;
+    let nextAudioStartTime = 0;
+    let speechStreamDone = false;
+    let speechSegments = new Map();
+    let activeCues = [];
+    let activeCueIndex = 0;
+    let speechStartTime = 0;
+    let streamedMediaDuration = 0;
+    let speechSerial = 0;
+    let requestController = null;
+    let lastSpeechTiming = '';
+    let modelReady = false;
+    let backendChecked = false;
+    let backendReady = false;
+    let backendMessage = 'Connecting to the local speech service…';
+    let laptopAudioDescription = 'laptop audio output';
+    let conversationEnabled = false;
+    let backendVisitorActive = false;
+    let autoStartAttempted = false;
+    let conversationPollTimer = null;
+    let backendCheckTimer = null;
+    let backendCheckInFlight = false;
+    let conversationStartInFlight = false;
+    let nextConversationStartAt = 0;
+    let lastConversationReplyId = 0;
+    let activeConversationReplyId = null;
+    let conversationSpeechReplyId = null;
+    let conversationVisualMode = 'idle';
+    let conversationReactionStartedAt = -1;
+    let conversationHeadTilt = 0;
+
+    const visemeNames = ['viseme_aa','viseme_E','viseme_I','viseme_O','viseme_U','viseme_PP','viseme_FF','viseme_TH','viseme_SS','viseme_CH','viseme_DD','viseme_kk','viseme_nn','viseme_RR'];
+    const faceNames = [...visemeNames, 'jawOpen', 'mouthOpen', 'eyeBlinkLeft', 'eyeBlinkRight', 'mouthSmileLeft', 'mouthSmileRight'];
+    const canonical = (value) => String(value).toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    function setStatus(message, mode = '') {
+      statusText.textContent = message;
+      status.className = `status${mode ? ` ${mode}` : ''}`;
+    }
+
+    function updateReadiness() {
+      debugBackend.textContent = !backendChecked ? 'Checking…' : backendReady ? `OpenAI + Rhubarb + ${laptopAudioDescription} ready` : backendMessage;
+      if (!debugModeRequested && modelReady && backendChecked && backendReady && !autoStartAttempted) {
+        autoStartAttempted = true;
+        void startVisitorMode();
+      }
+      speakButton.disabled = !modelReady || !backendReady || isRequestingSpeech || isSpeaking || conversationEnabled;
+      if (!modelReady) return;
+      if (!backendChecked) {
+        topStatus.textContent = 'checking voice service';
+        setStatus('Connecting to OpenAI TTS and local lip-sync…');
+      } else if (!backendReady) {
+        topStatus.textContent = 'voice setup needed';
+        setStatus(backendMessage, 'error');
+      } else {
+        topStatus.textContent = 'voice + lip-sync ready';
+        if (!isRequestingSpeech && !isSpeaking) setStatus('Ready. The dead can speak.');
+      }
+    }
+
+    async function checkBackend() {
+      if (backendCheckInFlight) return;
+      backendCheckInFlight = true;
+      window.clearTimeout(backendCheckTimer);
+      try {
+        const response = await fetch('/api/status', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`Local speech service returned HTTP ${response.status}.`);
+        const info = await response.json();
+        const loadedClientVersion = Math.floor(Date.parse(document.lastModified) / 1000);
+        const serverClientVersion = Number(info.clientVersion) || 0;
+        if (serverClientVersion > 0 && Number.isFinite(loadedClientVersion) && loadedClientVersion > 0 && serverClientVersion > loadedClientVersion) {
+          console.info('[Headroom] Reloading the display to update stale client code.');
+          window.location.reload();
+          return;
+        }
+        const voices = Array.isArray(info.voices) ? info.voices : [];
+        voiceSelect.replaceChildren();
+        for (const name of voices) {
+          const option = document.createElement('option');
+          option.value = name;
+          option.textContent = name;
+          voiceSelect.append(option);
+        }
+        if (voices.length) voiceSelect.value = voices.includes(info.defaultVoice) ? info.defaultVoice : voices[0];
+        voiceCount.textContent = `${voices.length} voices · ${info.model || 'OpenAI TTS'}`;
+        laptopAudioDescription = info.laptopAudioSink || 'laptop audio output';
+        const issues = [];
+        if (!info.openaiAvailable) issues.push('No OpenAI key found; restart with ./run.sh to use Pi auth, or set OPENAI_API_KEY.');
+        if (!info.rhubarbAvailable) issues.push('Rhubarb is missing; run ./scripts/install_rhubarb.sh, then restart.');
+        if (!info.laptopAudioAvailable) issues.push(`Laptop audio output is unavailable (${info.laptopAudioSink || 'paplay/PulseAudio missing'}).`);
+        backendReady = issues.length === 0;
+        backendMessage = issues.join(' ');
+      } catch (error) {
+        backendReady = false;
+        backendMessage = `${error.message} Waiting for the local service to reconnect…`;
+        voiceCount.textContent = 'service unavailable';
+      }
+      backendChecked = true;
+      backendCheckInFlight = false;
+      updateReadiness();
+      if (!backendReady) backendCheckTimer = window.setTimeout(() => { void checkBackend(); }, 3000);
+    }
+
+    function resize() {
+      const rect = stage.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      renderer.setSize(rect.width, rect.height, false);
+      camera.aspect = rect.width / rect.height;
+      camera.updateProjectionMatrix();
+    }
+    new ResizeObserver(resize).observe(stage);
+    window.addEventListener('resize', resize);
+    resize();
+
+    function getMorphIndex(mesh, wanted) {
+      const dict = mesh.morphTargetDictionary || {};
+      if (dict[wanted] !== undefined) return dict[wanted];
+      const key = Object.keys(dict).find((name) => canonical(name) === canonical(wanted));
+      return key === undefined ? -1 : dict[key];
+    }
+
+    function setMorph(name, value) {
+      const aliases = name === 'jawOpen' ? ['jawOpen', 'mouthOpen'] : [name];
+      for (const mesh of morphMeshes) {
+        for (const alias of aliases) {
+          const index = getMorphIndex(mesh, alias);
+          if (index >= 0 && mesh.morphTargetInfluences) mesh.morphTargetInfluences[index] = value;
+        }
+      }
+    }
+
+    function makeCanvasTexture(source, paint) {
+      const image = source?.image;
+      const width = image?.width || image?.naturalWidth;
+      const height = image?.height || image?.naturalHeight;
+      if (!image || !width || !height) return source;
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext('2d', { willReadFrequently: true });
+      context.drawImage(image, 0, 0, width, height);
+      paint(context, width, height);
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.name = `${source.name || 'avatar texture'} · floating-head treatment`;
+      texture.colorSpace = source.colorSpace;
+      texture.flipY = source.flipY;
+      texture.wrapS = source.wrapS;
+      texture.wrapT = source.wrapT;
+      texture.minFilter = source.minFilter;
+      texture.magFilter = source.magFilter;
+      texture.generateMipmaps = source.generateMipmaps;
+      texture.anisotropy = source.anisotropy;
+      texture.channel = source.channel;
+      texture.repeat.copy(source.repeat);
+      texture.offset.copy(source.offset);
+      texture.center.copy(source.center);
+      texture.rotation = source.rotation;
+      texture.matrixAutoUpdate = source.matrixAutoUpdate;
+      texture.matrix.copy(source.matrix);
+      texture.needsUpdate = true;
+      generatedZombieTextures.push(texture);
+      return texture;
+    }
+
+    function makeUndeadSkin(texture) {
+      return makeCanvasTexture(texture, (context, width, height) => {
+        const image = context.getImageData(0, 0, width, height);
+        const pixels = image.data;
+        for (let y = 0; y < height; y++) {
+          const slowY = Math.sin(y * 0.015);
+          const bend = Math.sin(y * 0.009) * 1.7;
+          for (let x = 0; x < width; x++) {
+            const i = (y * width + x) * 4;
+            if (pixels[i + 3] < 8) continue;
+            const luminance = pixels[i] * 0.25 + pixels[i + 1] * 0.62 + pixels[i + 2] * 0.13;
+            const mottling = Math.sin(x * 0.017 + bend) * slowY * 7 + Math.sin(x * 0.005 + y * 0.011) * 3;
+            pixels[i] = Math.max(0, Math.min(255, luminance * 0.64 + mottling));
+            pixels[i + 1] = Math.max(0, Math.min(255, luminance * 1.04 + mottling + 7));
+            pixels[i + 2] = Math.max(0, Math.min(255, luminance * 0.92 + mottling + 10));
+          }
+        }
+        context.putImageData(image, 0, 0);
+      });
+    }
+
+    function installNeckMistTint(material, fadeStart, fadeEnd) {
+      material.transparent = true;
+      material.depthWrite = true;
+      material.userData.headroomNeckMist = true;
+      material.customProgramCacheKey = () => 'headroom-neck-mist-tint-v1';
+      material.onBeforeCompile = (shader) => {
+        shader.uniforms.headroomMistStart = { value: fadeStart };
+        shader.uniforms.headroomMistEnd = { value: fadeEnd };
+        shader.vertexShader = shader.vertexShader.replace(
+          '#include <common>',
+          '#include <common>\nvarying float vHeadroomWorldY;\nvarying vec3 vHeadroomWorldPosition;',
+        );
+        shader.vertexShader = shader.vertexShader.replace(
+          '#include <project_vertex>',
+          'vec4 headroomWorldPosition = modelMatrix * vec4(transformed, 1.0);\nvHeadroomWorldPosition = headroomWorldPosition.xyz;\nvHeadroomWorldY = headroomWorldPosition.y;\n#include <project_vertex>',
+        );
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <common>',
+          '#include <common>\nvarying float vHeadroomWorldY;\nvarying vec3 vHeadroomWorldPosition;\nuniform float headroomMistStart;\nuniform float headroomMistEnd;',
+        );
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <alphatest_fragment>',
+          'float headroomNoise = sin(vHeadroomWorldPosition.x * 43.0 + vHeadroomWorldPosition.z * 31.0) * cos(vHeadroomWorldPosition.z * 37.0 - vHeadroomWorldPosition.x * 21.0);\nfloat headroomFadeStart = headroomMistStart + headroomNoise * 0.013;\nfloat headroomFadeEnd = headroomMistEnd + headroomNoise * 0.018;\nfloat headroomFade = smoothstep(headroomFadeEnd, headroomFadeStart, vHeadroomWorldY);\nfloat headroomMist = 1.0 - headroomFade;\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.18, 0.72, 0.66), headroomMist * 0.78);\ndiffuseColor.a *= headroomFade;\n#include <alphatest_fragment>',
+        );
+      };
+      material.needsUpdate = true;
+      installGhostRim(material, 1.5);
+    }
+
+    function installGhostRim(material, strength = 1.8, edgeStart = 0.82, edgeEnd = 0.985) {
+      if (material.userData.headroomGhostRim) return;
+      const previousOnBeforeCompile = material.onBeforeCompile;
+      const previousProgramCacheKey = material.customProgramCacheKey.bind(material);
+      material.onBeforeCompile = (shader, renderer) => {
+        previousOnBeforeCompile.call(material, shader, renderer);
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <opaque_fragment>',
+          `float headroomRimFacing = 1.0 - max(dot(normalize(normal), normalize(vViewPosition)), 0.0);\nfloat headroomGhostRim = smoothstep(${edgeStart.toFixed(3)}, ${edgeEnd.toFixed(3)}, headroomRimFacing);\noutgoingLight += vec3(0.9, 1.0, 0.99) * headroomGhostRim * ${strength.toFixed(2)};\n#include <opaque_fragment>`,
+        );
+      };
+      material.customProgramCacheKey = () => `${previousProgramCacheKey()}|headroom-ghost-rim-v1-${strength.toFixed(2)}-${edgeStart.toFixed(3)}-${edgeEnd.toFixed(3)}`;
+      material.userData.headroomGhostRim = true;
+      material.needsUpdate = true;
+    }
+
+    function makeWhiteEyes(texture) {
+      return makeCanvasTexture(texture, (context, width, height) => {
+        for (const [xNorm, yNorm] of [[0.704, 0.281], [0.294, 0.704]]) {
+          const x = width * xNorm;
+          const y = height * yNorm;
+          const radius = width * 0.125;
+          const milkyIris = context.createRadialGradient(x, y, radius * 0.015, x, y, radius);
+          milkyIris.addColorStop(0, 'rgba(255, 255, 255, 0.99)');
+          milkyIris.addColorStop(0.32, 'rgba(245, 255, 252, 0.98)');
+          milkyIris.addColorStop(0.68, 'rgba(218, 255, 249, 0.92)');
+          milkyIris.addColorStop(0.9, 'rgba(180, 241, 235, 0.65)');
+          milkyIris.addColorStop(1, 'rgba(150, 231, 227, 0)');
+          context.fillStyle = milkyIris;
+          context.beginPath();
+          context.arc(x, y, radius, 0, Math.PI * 2);
+          context.fill();
+        }
+      });
+    }
+
+    function makeEyeGlowTexture(source) {
+      const image = source?.image;
+      const width = image?.width || image?.naturalWidth;
+      const height = image?.height || image?.naturalHeight;
+      if (!image || !width || !height) return null;
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext('2d');
+      context.fillStyle = '#000000';
+      context.fillRect(0, 0, width, height);
+      for (const [xNorm, yNorm] of [[0.704, 0.281], [0.294, 0.704]]) {
+        const x = width * xNorm;
+        const y = height * yNorm;
+        const radius = width * 0.125;
+        const glow = context.createRadialGradient(x, y, radius * 0.02, x, y, radius);
+        glow.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        glow.addColorStop(0.55, 'rgba(225, 255, 248, 0.92)');
+        glow.addColorStop(0.9, 'rgba(104, 238, 224, 0.30)');
+        glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        context.fillStyle = glow;
+        context.beginPath();
+        context.arc(x, y, radius, 0, Math.PI * 2);
+        context.fill();
+      }
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.name = `${source.name || 'avatar eyes'} · ghost glow`;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.flipY = source.flipY;
+      texture.wrapS = source.wrapS;
+      texture.wrapT = source.wrapT;
+      texture.minFilter = source.minFilter;
+      texture.magFilter = source.magFilter;
+      texture.generateMipmaps = source.generateMipmaps;
+      texture.anisotropy = source.anisotropy;
+      texture.channel = source.channel;
+      texture.repeat.copy(source.repeat);
+      texture.offset.copy(source.offset);
+      texture.center.copy(source.center);
+      texture.rotation = source.rotation;
+      texture.matrixAutoUpdate = source.matrixAutoUpdate;
+      texture.matrix.copy(source.matrix);
+      texture.needsUpdate = true;
+      generatedZombieTextures.push(texture);
+      return texture;
+    }
+
+    function applyUndeadLook(root) {
+      for (const texture of generatedZombieTextures) texture.dispose();
+      generatedZombieTextures.length = 0;
+      root.traverse((node) => {
+        if (!node.isMesh || !node.material) return;
+        const materials = Array.isArray(node.material) ? node.material : [node.material];
+        if (/casualsuit|ponytail/i.test(node.name) || materials.some((material) => /casualsuit|ponytail/i.test(material.name || ''))) {
+          node.visible = false;
+          return;
+        }
+        for (const material of materials) {
+          const name = (material.name || '').toLowerCase();
+          if (name.includes('body') && material.map) {
+            material.map = makeUndeadSkin(material.map);
+            material.color.set('#ffffff');
+            material.roughness = 0.96;
+          } else if (name.includes('high-poly') && material.map) {
+            material.map = makeWhiteEyes(material.map);
+            material.color.set('#ffffff');
+            material.roughness = 0.46;
+            if (material.emissive) {
+              material.emissive.set('#9bfff4');
+              material.emissiveMap = makeEyeGlowTexture(material.map);
+              material.emissiveIntensity = 1.25;
+            }
+          } else if (name.includes('teeth')) {
+            material.color.set('#c0ae7c');
+            material.roughness = 0.84;
+          } else if (name.includes('tongue')) {
+            material.color.set('#9c6b60');
+            material.roughness = 0.9;
+          }
+          material.needsUpdate = true;
+        }
+      });
+    }
+
+    function makeAtmosphereTexture(kind) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const context = canvas.getContext('2d');
+      if (kind === 'smoke') {
+        let seed = 0x51f15e;
+        const random = () => {
+          seed = (seed * 1664525 + 1013904223) >>> 0;
+          return seed / 4294967296;
+        };
+        const makeNoiseGrid = (side) => Array.from({ length: side }, () => Array.from({ length: side }, random));
+        const grids = [makeNoiseGrid(5), makeNoiseGrid(11), makeNoiseGrid(23)];
+        const sample = (grid, u, v) => {
+          const side = grid.length;
+          const gx = u * (side - 1);
+          const gy = v * (side - 1);
+          const x0 = Math.floor(gx), y0 = Math.floor(gy);
+          const x1 = Math.min(side - 1, x0 + 1), y1 = Math.min(side - 1, y0 + 1);
+          const smooth = (t) => t * t * (3 - 2 * t);
+          const tx = smooth(gx - x0), ty = smooth(gy - y0);
+          const top = grid[y0][x0] * (1 - tx) + grid[y0][x1] * tx;
+          const bottom = grid[y1][x0] * (1 - tx) + grid[y1][x1] * tx;
+          return top * (1 - ty) + bottom * ty;
+        };
+        const image = context.createImageData(256, 256);
+        for (let y = 0; y < 256; y++) {
+          for (let x = 0; x < 256; x++) {
+            const u = x / 255, v = y / 255;
+            const turbulence = sample(grids[0], u, v) * 0.52 + sample(grids[1], u, v) * 0.31 + sample(grids[2], u, v) * 0.17;
+            const dx = (u - 0.5) / 0.42;
+            const dy = (v - 0.56) / 0.38;
+            const radius = Math.sqrt(dx * dx + dy * dy);
+            const envelope = Math.max(0, Math.min(1, (1.08 - radius) / 0.40));
+            const alpha = Math.max(0, envelope * (0.22 + turbulence * 0.78) - 0.085) * 0.62;
+            const offset = (y * 256 + x) * 4;
+            image.data[offset] = 139 + Math.round(turbulence * 70);
+            image.data[offset + 1] = 242 + Math.round(turbulence * 13);
+            image.data[offset + 2] = 227 + Math.round(turbulence * 20);
+            image.data[offset + 3] = Math.round(Math.min(0.48, alpha) * 255);
+          }
+        }
+        context.putImageData(image, 0, 0);
+      } else {
+        const gradient = context.createRadialGradient(128, 128, 8, 128, 128, 128);
+        if (kind === 'aura') {
+          gradient.addColorStop(0, 'rgba(102, 255, 239, 0.015)');
+          gradient.addColorStop(0.38, 'rgba(73, 255, 231, 0.045)');
+          gradient.addColorStop(0.68, 'rgba(54, 248, 225, 0.20)');
+          gradient.addColorStop(0.86, 'rgba(51, 224, 221, 0.11)');
+          gradient.addColorStop(1, 'rgba(35, 200, 210, 0)');
+        } else if (kind === 'veil') {
+          gradient.addColorStop(0, 'rgba(232, 255, 250, 0.76)');
+          gradient.addColorStop(0.32, 'rgba(155, 255, 240, 0.62)');
+          gradient.addColorStop(0.68, 'rgba(90, 236, 222, 0.22)');
+          gradient.addColorStop(1, 'rgba(40, 200, 200, 0)');
+        } else {
+          gradient.addColorStop(0, 'rgba(255, 255, 255, 0.98)');
+          gradient.addColorStop(0.16, 'rgba(219, 255, 249, 0.82)');
+          gradient.addColorStop(0.45, 'rgba(93, 255, 229, 0.38)');
+          gradient.addColorStop(0.78, 'rgba(52, 224, 215, 0.08)');
+          gradient.addColorStop(1, 'rgba(38, 208, 206, 0)');
+        }
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, 256, 256);
+      }
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.needsUpdate = true;
+      return texture;
+    }
+
+    function clearZombieAtmosphere() {
+      if (!zombieAtmosphere) return;
+      pivot.remove(zombieAtmosphere);
+      const geometries = new Set();
+      const materials = new Set();
+      const textures = new Set();
+      zombieAtmosphere.traverse((node) => {
+        if (node.geometry) geometries.add(node.geometry);
+        const list = Array.isArray(node.material) ? node.material : [node.material];
+        for (const material of list) {
+          if (!material) continue;
+          materials.add(material);
+          for (const value of Object.values(material)) {
+            if (value?.isTexture) textures.add(value);
+          }
+        }
+      });
+      geometries.forEach((geometry) => geometry.dispose());
+      materials.forEach((material) => material.dispose());
+      textures.forEach((texture) => texture.dispose());
+      zombieAtmosphere = null;
+      zombieAtmosphereMotion = [];
+    }
+
+    function createZombieAtmosphere(cutWorldY, cutPlaneY) {
+      clearZombieAtmosphere();
+      const group = new THREE.Group();
+      group.name = 'Headroom · ghost lights and mist';
+      pivot.add(group);
+      zombieAtmosphere = group;
+
+      const auraTexture = makeAtmosphereTexture('aura');
+      const aura = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: auraTexture, color: 0x73fff0, opacity: 0.78, transparent: true, alphaTest: 0.005,
+        depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false,
+      }));
+      aura.position.set(0, 0.06, -0.18);
+      aura.scale.set(0.52, 0.72, 1);
+      aura.renderOrder = -2;
+      group.add(aura);
+      zombieAtmosphereMotion.push({
+        object: aura, base: aura.position.clone(), phase: 1.2, rotation: 0,
+        speed: 0.22, driftX: 0.004, driftY: 0.007, opacity: 0.78, pulse: 0.06,
+      });
+
+      const mistTexture = makeAtmosphereTexture('smoke');
+      const mistSpecs = [
+        [0, cutPlaneY + 0.035, 0.11, 0.40, 0.24, 0.72],
+        [-0.08, cutWorldY - 0.065, 0.035, 0.30, 0.18, 0.40],
+        [0.01, cutWorldY - 0.045, 0.075, 0.28, 0.17, 0.42],
+        [0.09, cutWorldY - 0.070, -0.01, 0.31, 0.19, 0.39],
+        [-0.14, cutWorldY + 0.055, 0.16, 0.22, 0.36, 0.46],
+        [0.14, cutWorldY + 0.065, 0.15, 0.21, 0.34, 0.44],
+      ];
+      mistSpecs.forEach(([x, y, z, width, height, opacity], index) => {
+        const material = new THREE.SpriteMaterial({
+          map: mistTexture, color: index === 1 ? 0xcafff5 : 0x6dffe8,
+          opacity, transparent: true, alphaTest: 0.008, depthTest: false, depthWrite: false,
+          blending: THREE.NormalBlending, toneMapped: false,
+        });
+        const mist = new THREE.Sprite(material);
+        mist.position.set(x, y, z);
+        mist.scale.set(width, height, 1);
+        mist.renderOrder = 2;
+        group.add(mist);
+        zombieAtmosphereMotion.push({
+          object: mist, base: mist.position.clone(), phase: index * 2.1, rotation: index * 0.83,
+          speed: 0.32 + index * 0.06, driftX: 0.018, driftY: 0.012,
+          opacity, pulse: 0.12,
+        });
+      });
+
+
+      const veil = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: makeAtmosphereTexture('veil'), color: 0xaffff3, opacity: 0.78,
+        transparent: true, depthTest: false, depthWrite: false,
+        blending: THREE.NormalBlending, toneMapped: false,
+      }));
+      veil.position.set(0, cutPlaneY + 0.004, 0.15);
+      veil.scale.set(0.27, 0.14, 1);
+      veil.renderOrder = 4;
+      group.add(veil);
+      zombieAtmosphereMotion.push({
+        object: veil, base: veil.position.clone(), phase: 0.7, rotation: 0.18,
+        speed: 0.22, driftX: 0.008, driftY: 0.006, opacity: 0.78, pulse: 0.08,
+      });
+
+      const globeTexture = makeAtmosphereTexture('globe');
+      const globeGeometry = new THREE.SphereGeometry(0.006, 10, 8);
+      const globeSpecs = [
+        [-0.16, 0.25, 0.02, 0.0040, 0.023], [0.16, 0.22, 0.00, 0.0035, 0.022],
+        [-0.18, 0.08, 0.05, 0.0030, 0.020], [0.18, 0.02, 0.08, 0.0040, 0.024],
+        [-0.15, -0.12, 0.07, 0.0035, 0.022], [0.15, -0.15, 0.02, 0.0035, 0.022],
+        [-0.11, 0.20, -0.09, 0.0028, 0.018], [0.11, 0.19, -0.12, 0.0030, 0.019],
+      ];
+      globeSpecs.forEach(([x, y, z, radius, haloSize], index) => {
+        const globeGroup = new THREE.Group();
+        globeGroup.position.set(x, y, z);
+        const globe = new THREE.Mesh(globeGeometry, new THREE.MeshBasicMaterial({
+          color: index % 3 === 0 ? 0xffffff : 0xd9fff8, toneMapped: false,
+        }));
+        globe.scale.setScalar(radius / 0.006);
+        globeGroup.add(globe);
+        const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: globeTexture, color: index % 2 === 0 ? 0x9affee : 0xcafff7,
+          opacity: 0.74, transparent: true, depthWrite: false,
+          blending: THREE.AdditiveBlending, toneMapped: false,
+        }));
+        halo.scale.set(haloSize, haloSize, 1);
+        halo.renderOrder = 2;
+        globeGroup.add(halo);
+        group.add(globeGroup);
+        zombieAtmosphereMotion.push({
+          object: globeGroup, base: globeGroup.position.clone(), phase: index * 1.37,
+          speed: 0.45 + (index % 3) * 0.12, driftX: 0.012, driftY: 0.018,
+          halo, haloSize, opacity: 0.74, pulse: 0.22,
+        });
+      });
+    }
+
+    function updateZombieAtmosphere(timeSeconds) {
+      const reactionAge = conversationReactionStartedAt < 0 ? Infinity : timeSeconds - conversationReactionStartedAt;
+      const reactionPulse = reactionAge >= 0 && reactionAge < 0.8
+        ? Math.sin((reactionAge / 0.8) * Math.PI)
+        : 0;
+      const steadyGlow = conversationVisualMode === 'listening' ? 0.055
+        : conversationVisualMode === 'thinking' ? 0.025
+          : conversationVisualMode === 'speaking' ? 0.04 : 0;
+      const reactionStrength = conversationVisualMode === 'thinking' ? 0.13
+        : conversationVisualMode === 'speaking' ? 0.07 : 0.09;
+      const engagementGlow = steadyGlow + reactionPulse * reactionStrength;
+      for (const item of zombieAtmosphereMotion) {
+        const phase = timeSeconds * item.speed + item.phase;
+        const wave = Math.sin(phase);
+        item.object.position.set(
+          item.base.x + wave * item.driftX,
+          item.base.y + Math.sin(phase * 0.83) * item.driftY,
+          item.base.z,
+        );
+        if (item.object.isSprite && item.opacity !== undefined) {
+          item.object.material.opacity = Math.min(0.98, item.opacity * (1 + item.pulse * wave + engagementGlow));
+          item.object.material.rotation = item.rotation + Math.sin(phase * 0.35) * 0.08;
+        }
+        if (item.halo) {
+          const pulse = 1 + item.pulse * wave + engagementGlow;
+          item.halo.scale.set(item.haloSize * pulse, item.haloSize * pulse, 1);
+          item.halo.material.opacity = Math.min(0.98, item.opacity * (0.84 + 0.16 * wave + engagementGlow));
+        }
+      }
+    }
+
+    function addZombieAdornments(bone) {
+      const group = new THREE.Group();
+      group.name = 'Headroom · illustrated zombie details';
+      bone.add(group);
+
+      // Project every scar point onto the skinned body surface so details stay flush when viewed from the side.
+      avatar.updateMatrixWorld(true);
+      const faceSurfaceMeshes = [];
+      avatar.traverse((node) => {
+        if (!node.isSkinnedMesh) return;
+        const materials = Array.isArray(node.material) ? node.material : [node.material];
+        if (materials.some((material) => /body/i.test(material?.name || ''))) faceSurfaceMeshes.push(node);
+      });
+      faceSurfaceMeshes.forEach((mesh) => mesh.skeleton?.update());
+      const faceForward = new THREE.Vector3(0, 0, 1)
+        .applyQuaternion(bone.getWorldQuaternion(new THREE.Quaternion())).normalize();
+      const faceRaycaster = new THREE.Raycaster();
+      faceRaycaster.far = 0.6;
+      const surfacePointCache = new Map();
+      const projectToFace = (localPoint) => {
+        const key = `${localPoint.x.toFixed(4)}:${localPoint.y.toFixed(4)}`;
+        const cached = surfacePointCache.get(key);
+        if (cached) return cached.clone();
+        if (!faceSurfaceMeshes.length) return localPoint.clone();
+        const worldPoint = bone.localToWorld(localPoint.clone());
+        const origin = worldPoint.addScaledVector(faceForward, 0.25);
+        faceRaycaster.set(origin, faceForward.clone().negate());
+        const hits = faceRaycaster.intersectObjects(faceSurfaceMeshes, false);
+        if (!hits.length) return localPoint.clone();
+        const surfacePoint = bone.worldToLocal(hits[0].point.clone().addScaledVector(faceForward, 0.00045));
+        surfacePointCache.set(key, surfacePoint.clone());
+        return surfacePoint;
+      };
+
+      const projectedPathCache = new WeakMap();
+      const stitchBase = new THREE.MeshStandardMaterial({ color: 0x38273e, roughness: 0.92 });
+      const stitchThread = new THREE.MeshStandardMaterial({ color: 0xd2c7b7, roughness: 0.88 });
+      const point = (x, y, z) => new THREE.Vector3(x, y, z);
+      const addTube = (points, radius, material, segments = 18, conformToFace = false) => {
+        let curvePoints = points;
+        if (conformToFace) {
+          curvePoints = projectedPathCache.get(points);
+          if (!curvePoints) {
+            curvePoints = points.map(projectToFace);
+            projectedPathCache.set(points, curvePoints);
+          }
+        }
+        const curve = new THREE.CatmullRomCurve3(curvePoints);
+        const tubularSegments = Math.max(segments, (points.length - 1) * 8);
+        const mesh = new THREE.Mesh(
+          new THREE.TubeGeometry(curve, tubularSegments, radius, 6, false), material,
+        );
+        mesh.frustumCulled = false;
+        group.add(mesh);
+        return curve;
+      };
+
+      const addStitches = (points, count) => {
+        const curve = addTube(points, 0.00145, stitchBase, 22);
+        for (let i = 0; i < count; i++) {
+          const t = 0.14 + (0.72 * i) / Math.max(1, count - 1);
+          const center = curve.getPoint(t);
+          const tangent = curve.getTangent(t);
+          const across = new THREE.Vector3(-tangent.y, tangent.x, 0).normalize().multiplyScalar(0.0042);
+          addTube([center.clone().sub(across), center.clone().add(across)], 0.0011, stitchThread, 4);
+        }
+      };
+      addStitches([
+        point(-0.051, 0.055, 0.106), point(-0.037, 0.045, 0.111),
+        point(-0.023, 0.032, 0.111), point(-0.007, 0.023, 0.105),
+      ], 4);
+      addStitches([
+        point(0.033, 0.158, 0.085), point(0.019, 0.148, 0.098),
+        point(0.004, 0.144, 0.102), point(-0.007, 0.150, 0.100),
+      ], 3);
+
+      const foreheadScar = [
+        point(-0.045, 0.158, 0.098), point(-0.034, 0.164, 0.101),
+        point(-0.022, 0.168, 0.103), point(-0.010, 0.165, 0.103),
+      ];
+      const scarRidge = new THREE.MeshStandardMaterial({ color: 0x8a6874, roughness: 0.94 });
+      addTube(foreheadScar.map((p) => point(p.x, p.y + 0.0021, p.z + 0.0005)), 0.00075, scarRidge, 22);
+      addTube(foreheadScar.map((p) => point(p.x, p.y - 0.0021, p.z + 0.0005)), 0.00075, scarRidge, 22);
+      addStitches(foreheadScar, 3);
+
+      const crackGlow = new THREE.MeshBasicMaterial({
+        color: 0x77fff2, transparent: true, opacity: 0.30, depthWrite: false,
+        blending: THREE.AdditiveBlending, toneMapped: false,
+      });
+      const crackCore = new THREE.MeshBasicMaterial({ color: 0xf2fffd, toneMapped: false });
+      const crackPaths = [
+        // A crooked forehead fissure peeks out from below the fringe and branches toward one brow.
+        [point(-0.014, 0.173, 0.108), point(-0.005, 0.161, 0.114), point(-0.013, 0.151, 0.117), point(0.004, 0.143, 0.120), point(-0.002, 0.132, 0.120), point(0.014, 0.123, 0.115)],
+        [point(-0.005, 0.161, 0.114), point(0.012, 0.166, 0.108), point(0.024, 0.157, 0.104)],
+        // An asymmetric temple-to-cheek bolt with short branches; the eyes stay clear.
+        [point(-0.078, 0.095, 0.084), point(-0.066, 0.086, 0.097), point(-0.073, 0.075, 0.102), point(-0.057, 0.066, 0.108), point(-0.064, 0.055, 0.111), point(-0.049, 0.046, 0.113)],
+        [point(-0.057, 0.066, 0.108), point(-0.043, 0.072, 0.109), point(-0.034, 0.063, 0.109)],
+        [point(-0.064, 0.055, 0.111), point(-0.076, 0.048, 0.102), point(-0.072, 0.039, 0.103)],
+        // A shorter, broken fissure on the opposite cheek keeps the pattern deliberately uneven.
+        [point(0.077, 0.088, 0.084), point(0.063, 0.079, 0.097), point(0.070, 0.067, 0.103), point(0.055, 0.057, 0.109), point(0.060, 0.046, 0.111)],
+        [point(0.055, 0.057, 0.109), point(0.042, 0.064, 0.109), point(0.035, 0.056, 0.109)],
+      ];
+      for (const path of crackPaths) {
+        addTube(path, 0.0011, crackGlow, 24, true);
+        addTube(path, 0.00038, crackCore, 24, true);
+      }
+      const crackHalo = new THREE.MeshBasicMaterial({
+        color: 0x8bfff5, transparent: true, opacity: 0.40, depthWrite: false,
+        blending: THREE.AdditiveBlending, toneMapped: false,
+      });
+      const crackLight = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
+      const haloGeometry = new THREE.SphereGeometry(0.0028, 8, 6);
+      const coreGeometry = new THREE.SphereGeometry(0.0010, 8, 6);
+      for (const location of [
+        point(-0.057, 0.068, 0.112), point(-0.049, 0.047, 0.116),
+        point(0.055, 0.063, 0.112), point(-0.004, 0.137, 0.119),
+      ]) {
+        const surfaceLocation = projectToFace(location);
+        const glow = new THREE.Mesh(haloGeometry, crackHalo);
+        glow.position.copy(surfaceLocation);
+        group.add(glow);
+        const core = new THREE.Mesh(coreGeometry, crackLight);
+        core.position.copy(surfaceLocation);
+        group.add(core);
+      }
+    }
+
+    function addOtohikoHair(bone) {
+      const targetBone = bone;
+      loader.load('assets/otohikos_custom_hair.glb', (gltf) => {
+        if (headBone !== targetBone) return;
+        const hair = gltf.scene;
+        hair.name = 'Headroom · Otohiko custom wig';
+        // Slightly stretch the cap front-to-back and align its fringe to the MPFB crown.
+        hair.scale.set(0.78, 0.78, 1.1);
+        const bonePosition = targetBone.getWorldPosition(new THREE.Vector3()).sub(headFitOffsetWorld);
+        const avatarOrientation = avatar.getWorldQuaternion(new THREE.Quaternion());
+        const avatarUp = new THREE.Vector3(0, 1, 0).applyQuaternion(avatarOrientation).normalize();
+        const avatarForward = new THREE.Vector3(0, 0, 1).applyQuaternion(avatarOrientation).normalize();
+        hair.position.copy(bonePosition).addScaledVector(avatarUp, 0.085).addScaledVector(avatarForward, 0.02);
+        hair.quaternion.copy(avatarOrientation);
+        hair.updateMatrixWorld(true);
+        scene.add(hair);
+        targetBone.attach(hair);
+        const hairTint = new THREE.Color('#5b347f');
+        hair.traverse((node) => {
+          if (!node.isMesh) return;
+          node.frustumCulled = false;
+          const materials = Array.isArray(node.material) ? node.material : [node.material];
+          materials.forEach((material) => {
+            if (material.color) material.color.multiply(hairTint);
+            installGhostRim(material, 1.4, 0.68, 0.955);
+            material.needsUpdate = true;
+          });
+        });
+        document.documentElement.dataset.headroomHairReady = 'true';
+        if (modelReady) {
+          loading.classList.add('hidden');
+          updateReadiness();
+        }
+      }, undefined, (error) => {
+        document.documentElement.dataset.headroomHairReady = 'error';
+        console.error('Could not load the Otohiko wig:', error);
+        if (modelReady) {
+          loading.classList.add('hidden');
+          updateReadiness();
+        }
+      });
+    }
+
+    function addAvatar(gltf, label, local = true) {
+      clearZombieAtmosphere();
+      document.documentElement.dataset.headroomAvatarReady = 'false';
+      document.documentElement.dataset.headroomHairReady = local ? 'pending' : 'not-applicable';
+      if (avatar) {
+        for (const texture of generatedZombieTextures) texture.dispose();
+        generatedZombieTextures.length = 0;
+        pivot.remove(avatar);
+        avatar.traverse((node) => {
+          if (node.isMesh) {
+            node.geometry?.dispose();
+            const materials = Array.isArray(node.material) ? node.material : [node.material];
+            materials.forEach((material) => material?.dispose());
+          }
+        });
+      }
+      avatar = gltf.scene;
+      zombieLook = local;
+      const bounds = new THREE.Box3().setFromObject(avatar);
+      const size = bounds.getSize(new THREE.Vector3());
+      const center = bounds.getCenter(new THREE.Vector3());
+      if (!Number.isFinite(size.y) || size.y < 0.05) throw new Error('This GLB has no usable 3D geometry.');
+
+      // Center the upper-body/face area in the portrait window. Full-body rigs
+      // frame around the upper 88%; head-only files are centered on their bounds.
+      const focusY = size.y > 0.8 ? bounds.min.y + size.y * 0.875 : center.y;
+      const focusX = center.x;
+      const focusZ = center.z;
+      avatar.position.set(-focusX, -focusY, -focusZ);
+      if (zombieLook) {
+        loadingDetail.textContent = 'Preparing a cleanly floating head…';
+        applyUndeadLook(avatar);
+        const cutModelY = 1.48;
+        const cutWorldY = cutModelY - focusY;
+        const fadeStartY = cutWorldY + 0.04;
+        const cutPlaneY = cutWorldY - 0.065;
+        const fadeEndY = cutWorldY - 0.055;
+        const neckRadius = 0.048;
+        const neckTaper = 0.55;
+        const neckRadiusAtCutPlane = neckRadius - neckTaper * (cutWorldY - cutPlaneY);
+        const makeCutPlane = (normal, point) => new THREE.Plane(normal.normalize(), 0).setFromNormalAndCoplanarPoint(normal, point);
+        const cutPlanes = [
+          makeCutPlane(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, cutPlaneY, 0)),
+          makeCutPlane(new THREE.Vector3(-1, neckTaper, 0), new THREE.Vector3(neckRadiusAtCutPlane, cutPlaneY, 0)),
+          makeCutPlane(new THREE.Vector3(1, neckTaper, 0), new THREE.Vector3(-neckRadiusAtCutPlane, cutPlaneY, 0)),
+        ];
+        avatar.traverse((node) => {
+          if (!node.isMesh || !node.material) return;
+          const materials = Array.isArray(node.material) ? node.material : [node.material];
+          materials.forEach((material) => {
+            material.clippingPlanes = cutPlanes;
+            material.clipShadows = true;
+            if ((material.name || '').toLowerCase().includes('body')) {
+              installNeckMistTint(material, fadeStartY, fadeEndY);
+            }
+            material.needsUpdate = true;
+          });
+        });
+        createZombieAtmosphere(cutWorldY, cutPlaneY);
+      }
+      pivot.add(avatar);
+      pivot.rotation.set(0, 0, 0);
+      controls.target.set(0, 0, 0);
+      camera.position.set(0, 0, zombieLook ? 1.18 : size.y > 2.8 ? 1.6 : 1.42);
+      controls.minDistance = zombieLook ? 0.76 : size.y > 2.8 ? 1.05 : 0.92;
+      controls.maxDistance = size.y > 2.8 ? 2.65 : 2.4;
+      controls.update();
+      const reviewView = new URLSearchParams(window.location.search).get('reviewView');
+      if (zombieLook && reviewView === 'top') {
+        camera.up.set(0, 0, 1);
+        camera.position.set(0, 1.18, 0);
+        controls.minPolarAngle = 0.001;
+        controls.maxPolarAngle = Math.PI - 0.001;
+        controls.update();
+      }
+      morphMeshes = [];
+      morphKeys = new Set();
+      headBone = null;
+      avatar.traverse((node) => {
+        if (node.isMesh && node.morphTargetDictionary && node.morphTargetInfluences) {
+          morphMeshes.push(node);
+          Object.keys(node.morphTargetDictionary).forEach((name) => morphKeys.add(name));
+          node.frustumCulled = false;
+          if (node.material) {
+            const materials = Array.isArray(node.material) ? node.material : [node.material];
+            materials.forEach((material) => { if (material) material.needsUpdate = true; });
+          }
+        }
+        if (!headBone && node.isBone && /^(head|headtop|headbase)$/i.test(node.name)) headBone = node;
+      });
+      originalHeadRotation = headBone ? headBone.rotation.clone() : null;
+      headFitOffsetWorld.set(0, 0, 0);
+      if (zombieLook && headBone?.parent) {
+        // Move the skinned head 1 cm up and 1.5 cm forward while keeping the wig anchor fixed.
+        const avatarOrientation = avatar.getWorldQuaternion(new THREE.Quaternion());
+        headFitOffsetWorld.set(0, 0.01, 0.015).applyQuaternion(avatarOrientation);
+        const parentOrientation = headBone.parent.getWorldQuaternion(new THREE.Quaternion()).invert();
+        headBone.position.add(headFitOffsetWorld.clone().applyQuaternion(parentOrientation));
+        avatar.updateMatrixWorld(true);
+      }
+      if (zombieLook && headBone) {
+        addZombieAdornments(headBone);
+        addOtohikoHair(headBone);
+      } else if (zombieLook) {
+        document.documentElement.dataset.headroomHairReady = 'error';
+      }
+      faceNames.forEach((name) => setMorph(name, 0));
+      document.querySelector('#blendshape-count').textContent = `${morphKeys.size} facial targets`;
+      document.querySelector('#model-name').textContent = label;
+      document.querySelector('#model-license').textContent = local ? 'MPFB CC0 · wig CC BY 4.0' : 'User-selected GLB';
+      document.querySelector('#scene-model').textContent = label;
+      document.querySelector('#reset-model').hidden = local;
+      currentFileName = label;
+      modelReady = true;
+      document.documentElement.dataset.headroomAvatarReady = 'true';
+      if (!zombieLook || !headBone) loading.classList.add('hidden');
+      updateReadiness();
+      const supported = [...morphKeys].filter((name) => /viseme|jawopen|mouthopen/i.test(name)).length;
+      if (!supported) document.querySelector('#blendshape-count').textContent = `${morphKeys.size} targets · no lip-sync shapes`;
+    }
+
+    function loadDefaultAvatar() {
+      loader.load('assets/mpfb.glb', addLoaded, (event) => {
+        if (event.lengthComputable) loadingDetail.textContent = `Downloading face model · ${Math.round(event.loaded / event.total * 100)}%`;
+      }, (error) => {
+        document.documentElement.dataset.headroomAvatarReady = 'error';
+        document.documentElement.dataset.headroomHairReady = 'error';
+        console.error(error);
+        loading.classList.add('hidden');
+        topStatus.textContent = 'model unavailable';
+        setStatus('Could not load assets/mpfb.glb. Check the local server and refresh.', 'error');
+      });
+      function addLoaded(gltf) { addAvatar(gltf, 'MPFB · floating head', true); }
+    }
+
+    loadDefaultAvatar();
+
+    document.querySelector('#upload-model').addEventListener('click', () => modelFile.click());
+    document.querySelector('#reset-model').addEventListener('click', () => {
+      loading.classList.remove('hidden');
+      loadingDetail.textContent = 'Restoring the CC0 example…';
+      topStatus.textContent = 'loading model';
+      loadDefaultAvatar();
+    });
+    modelFile.addEventListener('change', async () => {
+      const file = modelFile.files?.[0];
+      if (!file) return;
+      loading.classList.remove('hidden');
+      loadingDetail.textContent = `Opening ${file.name}…`;
+      topStatus.textContent = 'loading model';
+      try {
+        const data = await file.arrayBuffer();
+        loader.parse(data, '', (gltf) => addAvatar(gltf, file.name.replace(/\.glb$/i, ''), false), (error) => {
+          console.error(error);
+          loading.classList.add('hidden');
+          topStatus.textContent = 'model error';
+          setStatus(`Could not open ${file.name}. Try a glTF 2.0 .glb file.`, 'error');
+        });
+      } catch (error) {
+        console.error(error);
+        loading.classList.add('hidden');
+        topStatus.textContent = 'model error';
+        setStatus('Unable to read that file. Try a valid .glb.', 'error');
+      } finally {
+        modelFile.value = '';
+      }
+    });
+
+    const rhubarbPoses = {
+      A: { shape: 'viseme_PP', jaw: 0.04 },
+      B: { shape: 'viseme_DD', jaw: 0.13 },
+      C: { shape: 'viseme_E', jaw: 0.29 },
+      D: { shape: 'viseme_aa', jaw: 0.56 },
+      E: { shape: 'viseme_O', jaw: 0.27 },
+      F: { shape: 'viseme_U', jaw: 0.20 },
+      G: { shape: 'viseme_FF', jaw: 0.12 },
+      H: { shape: 'viseme_DD', jaw: 0.20 },
+      X: { shape: '', jaw: 0 },
+    };
+
+    function cuePoseAt(elapsed) {
+      const idle = { shape: '', jaw: zombieLook ? 0.035 : 0 };
+      if (!activeCues.length || elapsed < 0) return idle;
+      while (activeCueIndex + 1 < activeCues.length && elapsed >= activeCues[activeCueIndex].end) activeCueIndex++;
+      const cue = activeCues[activeCueIndex];
+      if (!cue || elapsed < cue.start || elapsed >= cue.end) return idle;
+      return rhubarbPoses[cue.value] || idle;
+    }
+
+    async function fetchConversationAction(action, payload = {}) {
+      const response = await fetch(`/api/conversation/${action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `Visitor service returned HTTP ${response.status}.`);
+      return result;
+    }
+
+    function updateConversationVisualState(mode, message) {
+      const normalizedMessage = String(message || '').toLowerCase();
+      const nextVisualMode = mode === 'listening'
+        ? 'listening'
+        : mode === 'speaking'
+          ? 'speaking'
+          : mode === 'thinking' && /considering the visitor|thinking of a greeting/.test(normalizedMessage)
+            ? 'thinking'
+            : 'idle';
+      if (nextVisualMode === conversationVisualMode) return;
+      conversationVisualMode = nextVisualMode;
+      if (nextVisualMode !== 'idle') conversationReactionStartedAt = performance.now() / 1000;
+    }
+
+    function showConversationStatus(data) {
+      const message = data.message || data.error || 'Visitor mode is off.';
+      updateConversationVisualState(data.mode || 'stopped', message);
+      conversationStatus.textContent = message;
+      conversationDevices.textContent = `Laptop camera: ${data.camera || 'unknown'} · microphone: ${data.microphone || 'unknown'}`;
+      backendVisitorActive = Boolean(data.active);
+      const toggleLabel = conversationEnabled && !data.active
+        ? 'Reconnecting visitor mode…'
+        : data.active && !conversationEnabled ? 'Connect to active visitor mode' : data.active ? 'Stop visitor mode' : 'Start visitor mode';
+      conversationToggle.textContent = toggleLabel;
+      conversationGreet.disabled = !data.active || data.mode !== 'watching';
+      debugMode.textContent = String(data.mode || 'stopped').replaceAll('_', ' ');
+      debugMode.dataset.active = String(Boolean(data.active));
+      debugMode.dataset.mode = data.mode || 'stopped';
+      debugMessage.textContent = data.error || message;
+      debugCamera.textContent = data.camera || 'Unknown';
+      debugMicrophone.textContent = data.microphone || 'Unknown';
+      debugPersonDetection.textContent = `${data.personDetection || 'Unknown'} · ${Number(data.pendingPersonCrops || 0)} queued`;
+      debugMotion.textContent = `${Number(data.motionCount || 0)} automatic · ${Number(data.manualGreetingCount || 0)} manual`;
+      debugHeard.textContent = `${Number(data.heardCount || 0)} turns`;
+      debugVisionFrames.textContent = `${Number(data.savedVisionFrameCount || 0)} saved · ${data.lastVisionFrame || 'no snapshot yet'}`;
+      const displayAge = data.display?.ageSeconds;
+      debugDisplayHeartbeat.textContent = displayAge == null
+        ? 'Not seen'
+        : `${Number(displayAge).toFixed(1)}s ago · ${Number(data.display.pollCount || 0)} polls`;
+      document.querySelector('#debug-toggle').textContent = toggleLabel;
+      document.querySelector('#debug-greet').disabled = !data.active || data.mode !== 'watching';
+      conversationStatus.classList.toggle('error', Boolean(data.error));
+    }
+
+    async function pollConversation() {
+      if (!conversationEnabled && !debugModeRequested) return;
+      try {
+        const response = await fetch('/api/conversation/status', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`Visitor service returned HTTP ${response.status}.`);
+        const data = await response.json();
+        showConversationStatus(data);
+        if (conversationEnabled && !data.active && Date.now() >= nextConversationStartAt) {
+          activeConversationReplyId = null;
+          conversationSpeechReplyId = null;
+          lastConversationReplyId = 0;
+          nextConversationStartAt = Date.now() + 3000;
+          void startVisitorMode();
+        } else if (conversationEnabled && data.active) {
+          nextConversationStartAt = 0;
+        }
+        const reply = data.reply;
+        const replyId = Number(reply?.id);
+        if (reply && Number.isInteger(replyId) && replyId > lastConversationReplyId) {
+          const staleActiveReply = activeConversationReplyId !== null && activeConversationReplyId !== replyId;
+          const staleSpeechReply = conversationSpeechReplyId !== null && conversationSpeechReplyId !== replyId;
+          if (staleActiveReply || staleSpeechReply) {
+            console.warn('[Headroom] Backend advanced while display still held an older reply; clearing stale playback state.', {
+              backendReplyId: replyId,
+              activeConversationReplyId,
+              conversationSpeechReplyId,
+            });
+            stopSpeech();
+            activeConversationReplyId = null;
+          }
+        }
+        if (reply && Number.isInteger(replyId) && replyId > lastConversationReplyId && activeConversationReplyId === null) {
+          if (!modelReady || !backendReady) {
+            if (debugModeRequested) debugMessage.textContent = 'Waiting for the avatar, TTS, and laptop audio output…';
+          } else if (isRequestingSpeech || isSpeaking) {
+            if (debugModeRequested) debugMessage.textContent = 'Waiting for the current laptop audio to finish before starting Bobby’s reply…';
+          } else {
+            activeConversationReplyId = replyId;
+            void startSpeech(String(reply.text || ''), replyId).then((handled) => {
+              if (handled) lastConversationReplyId = Math.max(lastConversationReplyId, replyId);
+              else if (activeConversationReplyId === replyId) activeConversationReplyId = null;
+            }).catch((error) => {
+              if (activeConversationReplyId === replyId) activeConversationReplyId = null;
+              console.error('[Headroom] Visitor reply playback request failed', error);
+            });
+          }
+        }
+      } catch (error) {
+        const message = error.message || 'Lost connection to visitor service.';
+        conversationStatus.textContent = `${message} Reconnecting automatically…`;
+        if (debugModeRequested) debugMessage.textContent = conversationStatus.textContent;
+        backendReady = false;
+        backendChecked = true;
+        backendMessage = conversationStatus.textContent;
+        updateReadiness();
+        void checkBackend();
+      }
+      if (conversationEnabled || debugModeRequested) {
+        conversationPollTimer = window.setTimeout(pollConversation, conversationEnabled ? 250 : 900);
+      }
+    }
+
+    async function startVisitorMode() {
+      if (conversationStartInFlight || (conversationEnabled && backendVisitorActive)) return;
+      if (!modelReady || !backendReady) {
+        const message = 'Wait for the avatar, TTS, and laptop audio output to finish loading.';
+        conversationStatus.textContent = message;
+        if (debugModeRequested) debugMessage.textContent = message;
+        return;
+      }
+      conversationStartInFlight = true;
+      try {
+        const data = await fetchConversationAction('start', {
+          voice: voiceSelect.value,
+          rate: Number(rateSelect.value) || 0.94,
+        });
+        if (!data.active) throw new Error(data.error || 'Visitor mode did not start.');
+        conversationEnabled = true;
+        lastConversationReplyId = 0;
+        activeConversationReplyId = null;
+        conversationSpeechReplyId = null;
+        nextConversationStartAt = 0;
+        showConversationStatus(data);
+        window.clearTimeout(conversationPollTimer);
+        conversationPollTimer = window.setTimeout(pollConversation, 250);
+        updateReadiness();
+      } catch (error) {
+        conversationStatus.textContent = error.message || 'Could not start visitor mode.';
+        if (debugModeRequested) debugMessage.textContent = conversationStatus.textContent;
+        console.error('[Headroom] Could not start visitor mode', error);
+        if (conversationEnabled) {
+          nextConversationStartAt = Date.now() + 5000;
+        } else if (!debugModeRequested && /Failed to fetch|NetworkError|Load failed|HTTP 5\d\d/i.test(error.message || '')) {
+          autoStartAttempted = false;
+          window.setTimeout(() => {
+            if (backendReady) updateReadiness();
+            else void checkBackend();
+          }, 3000);
+        }
+      } finally {
+        conversationStartInFlight = false;
+      }
+    }
+
+    function syncVisitorSpeechSettings() {
+      if (!conversationEnabled && !backendVisitorActive) return;
+      void fetchConversationAction('start', {
+        voice: voiceSelect.value,
+        rate: Number(rateSelect.value) || 0.94,
+      }).catch((error) => console.warn('[Headroom] Could not update visitor speech settings', error));
+    }
+
+    async function stopVisitorMode() {
+      if (!conversationEnabled && !backendVisitorActive) return;
+      conversationEnabled = false;
+      window.clearTimeout(conversationPollTimer);
+      conversationPollTimer = null;
+      try {
+        const data = await fetchConversationAction('stop');
+        showConversationStatus(data);
+        if (conversationSpeechReplyId !== null) {
+          const message = 'Visitor mode is off. Bobby is finishing her current reply on the laptop.';
+          conversationStatus.textContent = message;
+          if (debugModeRequested) debugMessage.textContent = message;
+        }
+      } catch (error) {
+        conversationStatus.textContent = error.message || 'Could not stop visitor mode cleanly.';
+        if (debugModeRequested) debugMessage.textContent = conversationStatus.textContent;
+      }
+      updateReadiness();
+      if (debugModeRequested) conversationPollTimer = window.setTimeout(pollConversation, 250);
+    }
+
+    function finishSpeech(serial) {
+      if (serial !== speechSerial) return;
+      if (conversationSpeechReplyId !== null) {
+        conversationSpeechReplyId = null;
+        activeConversationReplyId = null;
+      }
+      requestController = null;
+      isRequestingSpeech = false;
+      isSpeaking = false;
+      speechStreamDone = false;
+      speechSegments.clear();
+      activeCues = [];
+      activeCueIndex = 0;
+      speechStartTime = 0;
+      streamedMediaDuration = 0;
+      nextAudioStartTime = 0;
+      speakButton.disabled = !modelReady || !backendReady || conversationEnabled;
+      setStatus(`Finished · ${currentFileName} · ${lastSpeechTiming}`, '');
+    }
+
+    async function startSpeech(textOverride = null, conversationReplyId = null) {
+      const text = typeof textOverride === 'string' ? textOverride.trim() : speechText.value.trim();
+      if (!text) { if (conversationReplyId === null) speechText.focus(); return false; }
+      if (conversationEnabled && conversationReplyId === null) return false;
+      if (!modelReady || !backendReady || isRequestingSpeech || isSpeaking) {
+        updateReadiness();
+        return false;
+      }
+      const requestStartedAt = performance.now();
+      const serial = ++speechSerial;
+      conversationSpeechReplyId = conversationReplyId;
+      activeCues = [];
+      activeCueIndex = 0;
+      speechStartTime = 0;
+      streamedMediaDuration = 0;
+      nextAudioStartTime = 0;
+      speechStreamDone = false;
+      speechSegments = new Map();
+      let receivedAudioChunks = 0;
+      let expectedSegments = 0;
+      let streamFinished = false;
+      let firstAudioInfo = null;
+      isRequestingSpeech = true;
+      requestController = new AbortController();
+      updateReadiness();
+      setStatus('Preparing the first audio-synced phrase…', 'active');
+      const fetchStartedAt = performance.now();
+      const thisVoice = voiceSelect.value;
+      const seconds = (ms) => `${(ms / 1000).toFixed(1)}s`;
+
+      const handleEvent = async (event) => {
+        if (serial !== speechSerial) return;
+        if (event.type === 'start') {
+          expectedSegments = Number(event.segments) || 0;
+          setStatus(`Preparing phrase 1 of ${expectedSegments || 'your line'}…`, 'active');
+          return;
+        }
+        if (event.type === 'error') throw new Error(event.error || 'Speech stream failed.');
+        if (event.type === 'audio-complete') {
+          // Audio owns the conversational turn; Rhubarb may finish later. A newer
+          // speechSerial will fence off any stale cues from this completed reply.
+          isSpeaking = false;
+          isRequestingSpeech = false;
+          if (conversationSpeechReplyId !== null) {
+            const completedReplyId = conversationSpeechReplyId;
+            lastConversationReplyId = Math.max(lastConversationReplyId, completedReplyId);
+            if (activeConversationReplyId === completedReplyId) activeConversationReplyId = null;
+            conversationSpeechReplyId = null;
+          }
+          updateReadiness();
+          setStatus('Laptop audio finished · ready for the next turn.', '');
+          return;
+        }
+        if (event.type === 'done') {
+          streamFinished = true;
+          speechStreamDone = true;
+          requestController = null;
+          isRequestingSpeech = false;
+          if (event.audioOutput) {
+            const gaps = event.audioOutput;
+            lastSpeechTiming += ` · late PCM packets ${Number(gaps.latePackets) || 0} (max ${Number(gaps.maxLateMs) || 0} ms)`;
+            console.info('[Headroom] Laptop audio output timing', gaps);
+          }
+          console.info('[Headroom] Streamed speech totals', {
+            segments: event.segments,
+            timingsMs: event.totalTimingsMs,
+          });
+          finishSpeech(serial);
+          return;
+        }
+        if (event.type === 'envelope') {
+          const receivedAt = performance.now();
+          const envelope = Array.isArray(event.jawEnvelope) ? event.jawEnvelope : [];
+          const envelopeStep = Math.max(0.001, Number(event.envelopeStep) || 0.01);
+          const duration = Number(event.duration) || envelope.length * envelopeStep;
+          if (!envelope.length || !duration) throw new Error('The laptop returned no mouth-animation data.');
+          const isFirstChunk = receivedAudioChunks === 0;
+          const receivedSeconds = receivedAt / 1000;
+          const playbackLeadMs = Math.max(0, Number(event.playbackLeadMs) || 200);
+          const scheduledStart = nextAudioStartTime > 0
+            ? Math.max(nextAudioStartTime, receivedSeconds + 0.025)
+            : receivedSeconds + playbackLeadMs / 1000;
+          if (isFirstChunk) speechStartTime = scheduledStart;
+          const segmentOffset = scheduledStart - speechStartTime;
+          let phrase = speechSegments.get(event.index);
+          if (!phrase) {
+            phrase = {
+              start: segmentOffset, end: segmentOffset, mediaStart: streamedMediaDuration,
+              cuesReady: false, pieces: [],
+            };
+            speechSegments.set(event.index, phrase);
+          }
+          const piece = {
+            start: segmentOffset,
+            end: segmentOffset + duration,
+            mediaStart: streamedMediaDuration,
+            samples: envelope,
+            sampleRate: 1 / envelopeStep,
+          };
+          streamedMediaDuration += duration;
+          phrase.start = Math.min(phrase.start, piece.start);
+          phrase.end = piece.end;
+          phrase.pieces.push(piece);
+          nextAudioStartTime = scheduledStart + duration;
+          receivedAudioChunks++;
+
+          const openaiTtfbMs = Number(event.openaiTtfbMs) || 0;
+          const envelopeMs = Number(event.envelopeMs) || 0;
+          const clientWaitMs = receivedAt - fetchStartedAt;
+          const deliveryMs = Math.max(0, clientWaitMs - openaiTtfbMs - envelopeMs);
+          if (isFirstChunk) {
+            isRequestingSpeech = false;
+            isSpeaking = true;
+            speakButton.disabled = true;
+            const requestToFirstOutputMs = receivedAt - requestStartedAt + playbackLeadMs;
+            firstAudioInfo = {
+              requestToFirstOutputMs, openaiTtfbMs, envelopeMs, deliveryMs, playbackLeadMs,
+              voice: event.voice || thisVoice,
+              recognizer: event.recognizer || 'phonetic',
+              audioSeconds: duration,
+            };
+            lastSpeechTiming = `laptop audio · first mouth envelope ${seconds(requestToFirstOutputMs)} · OpenAI TTFB ${seconds(openaiTtfbMs)} · Rhubarb pending`;
+            setStatus(`Speaking on laptop with ${firstAudioInfo.voice} · ${lastSpeechTiming}`, 'active');
+            console.info('[Headroom] Laptop audio and first mouth-envelope timings', {
+              segments: expectedSegments,
+              requestToFirstOutputMs: Math.round(requestToFirstOutputMs),
+              playbackLeadMs,
+              openaiTtfbMs: Math.round(openaiTtfbMs),
+              jawEnvelopeMs: Math.round(envelopeMs),
+              deliveryMs: Math.round(deliveryMs),
+              audioSeconds: Number(duration.toFixed(2)),
+              pcmChunk: event.chunkIndex,
+            });
+          } else {
+            console.info('[Headroom] Laptop PCM mouth envelope', {
+              segment: Number(event.index) + 1,
+              chunk: event.chunkIndex,
+              audioSeconds: Number(duration.toFixed(2)),
+            });
+          }
+          return;
+        }
+        if (event.type === 'cues') {
+          const segment = speechSegments.get(event.index);
+          if (!segment) throw new Error('Lip-sync cues arrived before their audio phrase.');
+          if (!Array.isArray(event.cues) || !event.cues.length) throw new Error('Lip-sync analysis returned no mouth cues for a phrase.');
+          segment.cuesReady = true;
+          activeCues.push(...event.cues.map((cue) => ({
+            start: cue.start + segment.mediaStart,
+            end: cue.end + segment.mediaStart,
+            value: cue.value,
+          })));
+          if (event.index === 0 && firstAudioInfo) {
+            const requestToCuesMs = performance.now() - requestStartedAt;
+            const timings = event.timingsMs || {};
+            const rhubarbMs = Number(timings.rhubarb) || 0;
+            const openaiTtsMs = Number(timings.openaiTts) || 0;
+            lastSpeechTiming = `laptop audio · first mouth envelope ${seconds(firstAudioInfo.requestToFirstOutputMs)} · OpenAI TTFB ${seconds(firstAudioInfo.openaiTtfbMs)} / phrase ${seconds(openaiTtsMs)} · Rhubarb/${firstAudioInfo.recognizer} ${seconds(rhubarbMs)} · cues ready ${seconds(requestToCuesMs)}`;
+            if (isSpeaking) setStatus(`Speaking with ${firstAudioInfo.voice} · ${lastSpeechTiming}`, 'active');
+            console.info('[Headroom] First phrase lip-sync arrived', {
+              requestToCuesMs: Math.round(requestToCuesMs), rhubarbMs: Math.round(rhubarbMs),
+              cueCount: event.cues.length,
+            });
+          } else {
+            console.info('[Headroom] Phrase lip-sync arrived', {
+              segment: Number(event.index) + 1,
+              timingsMs: event.timingsMs,
+              cueCount: event.cues.length,
+            });
+          }
+        }
+      };
+
+      try {
+        const response = conversationReplyId !== null
+          ? await fetch(`/api/conversation/reply-stream?replyId=${encodeURIComponent(conversationReplyId)}`, {
+            cache: 'no-store', signal: requestController.signal,
+          })
+          : await fetch('/api/speak-stream', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text, voice: thisVoice, rate: Number(rateSelect.value) || 0.94 }),
+            signal: requestController.signal,
+          });
+        if (!response.ok) {
+          let detail = `Speech service returned HTTP ${response.status}.`;
+          try { detail = (await response.json()).error || detail; } catch (_) { /* no JSON error body */ }
+          throw new Error(detail);
+        }
+        if (!response.body) throw new Error('This browser cannot read the speech stream. Try current Chrome or Edge.');
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let pending = '';
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) {
+            pending += decoder.decode();
+            if (pending.trim()) await handleEvent(JSON.parse(pending));
+            break;
+          }
+          pending += decoder.decode(value, { stream: true });
+          let newline;
+          while ((newline = pending.indexOf('\n')) >= 0) {
+            const line = pending.slice(0, newline).trim();
+            pending = pending.slice(newline + 1);
+            if (line) await handleEvent(JSON.parse(line));
+          }
+        }
+        if (!streamFinished && serial === speechSerial) throw new Error('Speech stream ended before all phrases were ready.');
+        return true;
+      } catch (error) {
+        if (serial !== speechSerial || error.name === 'AbortError') return;
+        requestController?.abort();
+        requestController = null;
+        if (conversationSpeechReplyId !== null) {
+          const failedReplyId = conversationSpeechReplyId;
+          console.warn('[Headroom] Lip-sync display stream ended; laptop speech continues independently.', failedReplyId);
+          if (activeConversationReplyId === failedReplyId) activeConversationReplyId = null;
+          conversationSpeechReplyId = null;
+        }
+        isRequestingSpeech = false;
+        isSpeaking = false;
+        speechStreamDone = false;
+        speechSegments.clear();
+        activeCues = [];
+        activeCueIndex = 0;
+        speechStartTime = 0;
+        streamedMediaDuration = 0;
+        nextAudioStartTime = 0;
+        updateReadiness();
+        setStatus(error.message || 'Could not generate speech.', 'error');
+        // Once the request has been dispatched, don't replay the same reply:
+        // the server may already have claimed it or advanced the interaction.
+        return true;
+      }
+    }
+
+    function stopSpeech() {
+      if (conversationSpeechReplyId !== null) {
+        setStatus('Visitor speech is playing independently on the laptop; this control only stops manual test speech.', 'active');
+        return;
+      }
+      speechSerial++;
+      requestController?.abort();
+      requestController = null;
+      isRequestingSpeech = false;
+      isSpeaking = false;
+      speechStreamDone = false;
+      speechSegments.clear();
+      activeCues = [];
+      activeCueIndex = 0;
+      speechStartTime = 0;
+      streamedMediaDuration = 0;
+      nextAudioStartTime = 0;
+      speakButton.disabled = !modelReady || !backendReady || conversationEnabled;
+      if (conversationSpeechReplyId !== null) conversationSpeechReplyId = null;
+      setStatus('Stopped. Ready when you are.', '');
+    }
+    speakButton.addEventListener('click', () => { void startSpeech(); });
+    document.querySelector('#stop').addEventListener('click', stopSpeech);
+    conversationToggle.addEventListener('click', () => {
+      if (conversationEnabled) void stopVisitorMode();
+      else void startVisitorMode();
+    });
+    voiceSelect.addEventListener('change', syncVisitorSpeechSettings);
+    rateSelect.addEventListener('change', syncVisitorSpeechSettings);
+    conversationGreet.addEventListener('click', async () => {
+      if (!conversationEnabled) return;
+      try { showConversationStatus(await fetchConversationAction('greet')); }
+      catch (error) {
+        conversationStatus.textContent = error.message || 'Could not start a greeting.';
+        if (debugModeRequested) debugMessage.textContent = conversationStatus.textContent;
+      }
+    });
+    document.querySelector('#debug-toggle').addEventListener('click', () => conversationToggle.click());
+    document.querySelector('#debug-greet').addEventListener('click', () => conversationGreet.click());
+    speechText.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void startSpeech(); }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'F2') {
+        event.preventDefault();
+        if (!debugModeRequested) return;
+        document.body.classList.toggle('controls-open');
+        return;
+      }
+      if (event.key === 'Escape') {
+        if (!debugModeRequested) return;
+        if (isSpeaking || isRequestingSpeech) stopSpeech();
+        else document.body.classList.remove('controls-open');
+        return;
+      }
+      const editing = event.target instanceof HTMLElement
+        && event.target.closest('textarea, input, select, button, [contenteditable="true"]');
+      if (debugModeRequested && event.code === 'Space' && !event.repeat && !editing) {
+        event.preventDefault();
+        if (isSpeaking || isRequestingSpeech) stopSpeech();
+        else void startSpeech();
+      }
+    });
+    void checkBackend();
+    if (debugModeRequested) void pollConversation();
+
+    function audioDrivenJaw(piece, localTime) {
+      const envelope = piece.samples;
+      if (!envelope.length) return 0;
+      const position = Math.max(0, Math.min(envelope.length - 1, localTime * piece.sampleRate));
+      const lower = Math.floor(position);
+      const upper = Math.min(envelope.length - 1, lower + 1);
+      const fraction = position - lower;
+      return Math.max(0, Math.min(0.42, envelope[lower] + (envelope[upper] - envelope[lower]) * fraction));
+    }
+
+    function smoothMorphs(now, deltaSeconds) {
+      let pose = { shape: '', jaw: zombieLook ? 0.035 : 0 };
+      if (isSpeaking && speechStartTime > 0) {
+        const elapsed = now / 1000 - speechStartTime;
+        let segment = null;
+        for (const item of speechSegments.values()) {
+          if (elapsed >= item.start && elapsed < item.end) { segment = item; break; }
+        }
+        if (segment) {
+          const piece = segment.pieces.find((item) => elapsed >= item.start && elapsed < item.end);
+          if (piece) {
+            pose = segment.cuesReady
+              ? cuePoseAt(piece.mediaStart + elapsed - piece.start)
+              : { shape: '', jaw: audioDrivenJaw(piece, elapsed - piece.start) };
+          }
+        }
+      }
+
+      if (now >= nextBlinkAt) {
+        blinkStart = now;
+        nextBlinkAt = now + 2400 + Math.random() * 3100;
+      }
+      let blink = 0;
+      if (blinkStart >= 0) {
+        const progress = (now - blinkStart) / 175;
+        if (progress <= 1) blink = Math.sin(progress * Math.PI);
+        else blinkStart = -1;
+      }
+
+      const listening = zombieLook && conversationVisualMode === 'listening';
+      const thinking = zombieLook && conversationVisualMode === 'thinking';
+      const alertness = listening ? 0.035 : thinking ? 0.018 : 0;
+      const targets = new Map();
+      for (const name of visemeNames) targets.set(canonical(name), 0);
+      targets.set(canonical('jawOpen'), pose.jaw);
+      targets.set(canonical('mouthOpen'), pose.jaw);
+      targets.set(canonical('mouthSmileLeft'), zombieLook ? 0.045 : (isSpeaking ? 0.025 : 0.018));
+      targets.set(canonical('mouthSmileRight'), zombieLook ? 0.055 : (isSpeaking ? 0.025 : 0.018));
+      targets.set(canonical('eyeWideLeft'), zombieLook ? 0.025 + alertness * 0.55 : 0);
+      targets.set(canonical('eyeWideRight'), zombieLook ? 0.145 + alertness : 0);
+      targets.set(canonical('eyeSquintLeft'), zombieLook ? 0.13 : 0);
+      targets.set(canonical('eyeSquintRight'), 0);
+      targets.set(canonical('browDownLeft'), zombieLook ? 0.025 : 0);
+      targets.set(canonical('browDownRight'), zombieLook ? 0.045 : 0);
+      targets.set(canonical('browOuterUpLeft'), zombieLook ? 0.045 + alertness * 0.45 : 0);
+      targets.set(canonical('mouthFrownLeft'), zombieLook ? 0.025 : 0);
+      targets.set(canonical('mouthFrownRight'), zombieLook ? 0.025 : 0);
+      targets.set(canonical('eyeBlinkLeft'), blink);
+      targets.set(canonical('eyeBlinkRight'), blink);
+      if (pose.shape) targets.set(canonical(pose.shape), Math.min(0.85, pose.jaw > 0.32 ? 0.72 : 0.50));
+      const blend = 1 - Math.exp(-Math.max(0.001, deltaSeconds) * (isSpeaking ? 38 : 18));
+      for (const mesh of morphMeshes) {
+        const dictionary = mesh.morphTargetDictionary || {};
+        for (const [name, index] of Object.entries(dictionary)) {
+          const target = targets.get(canonical(name));
+          if (target === undefined) continue;
+          const current = mesh.morphTargetInfluences[index] || 0;
+          mesh.morphTargetInfluences[index] = current + (target - current) * blend;
+        }
+      }
+
+      if (headBone && originalHeadRotation) {
+        const t = now / 1000;
+        const reactionAge = conversationReactionStartedAt < 0 ? Infinity : t - conversationReactionStartedAt;
+        const reactionPulse = reactionAge >= 0 && reactionAge < 0.55
+          ? Math.sin((reactionAge / 0.55) * Math.PI)
+          : 0;
+        const targetHeadTilt = listening ? -0.032 : thinking ? 0.026 : 0;
+        conversationHeadTilt += (targetHeadTilt - conversationHeadTilt)
+          * (1 - Math.exp(-Math.max(0.001, deltaSeconds) * 3.5));
+        headBone.rotation.x = originalHeadRotation.x + Math.sin(t * 0.64) * 0.018 + (thinking ? reactionPulse * 0.012 : 0);
+        headBone.rotation.y = originalHeadRotation.y + Math.sin(t * 0.39 + 1.1) * 0.033;
+        headBone.rotation.z = originalHeadRotation.z + Math.sin(t * 0.52) * 0.008
+          + conversationHeadTilt + (reactionPulse * (thinking ? 0.012 : listening ? -0.01 : 0));
+      }
+      // A tiny breathing-like drift keeps the portrait from feeling frozen.
+      const t = now / 1000;
+      pivot.rotation.y += (Math.sin(t * 0.31) * 0.012 - pivot.rotation.y) * blend * 0.16;
+      const portraitTilt = zombieLook ? 0 : Math.sin(t * 0.42 + 0.7) * 0.005;
+      pivot.rotation.x += (portraitTilt - pivot.rotation.x) * blend * 0.16;
+    }
+
+    let previousFrame = performance.now();
+    function animate(now) {
+      requestAnimationFrame(animate);
+      const deltaSeconds = Math.min(0.05, (now - previousFrame) / 1000);
+      previousFrame = now;
+      smoothMorphs(now, deltaSeconds);
+      updateZombieAtmosphere(now / 1000);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>

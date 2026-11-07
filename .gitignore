@@ -1,0 +1,67 @@
+# Local environments, credentials, and machine-specific configuration
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+.auth/
+secrets/
+credentials/
+**/auth.json
+**/credentials.json
+**/token.json
+**/service-account*.json
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+id_ecdsa*
+id_dsa*
+
+# Private runtime data: logs may contain visitor transcripts and camera crops
+logs/
+**/logs/
+*.log
+*.jsonl
+transcripts/
+vision_frames/
+
+# Generated audio, video, captures, and model weights
+*.wav
+*.pcm
+*.mp3
+*.mp4
+*.mov
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.gif
+*.pt
+*.pth
+*.sqlite
+*.sqlite3
+*.db
+headroom-review.*
+
+# Python/tool caches and test output
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local agent instructions/tools and IDE state
+.DS_Store
+Thumbs.db
+.agents/
+.pi/
+.vscode/
+.idea/
+*.swp
+*~

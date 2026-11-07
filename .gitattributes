@@ -1,0 +1,8 @@
+# Keep 3D models and other binary media out of text diffs.
+*.glb binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.webp binary
+*.wav binary
+*.mp3 binary
